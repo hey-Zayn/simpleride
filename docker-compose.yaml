@@ -1,0 +1,124 @@
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports:
+      - "8000:80"
+    restart: always
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gateway  
+   
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart : always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+  redis:
+    image: redis
+    container_name: redis
+    restart : always
+    ports:
+      - "6379:6379"
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart : always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest 
+
+  gateway:
+    build: ./backend/gateway
+    container_name: gateway
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/gateway/.env
+    volumes:
+      - ./backend/gateway:/app
+      - /app/node_modules
+     
+    depends_on:
+      - auth-service  
+      - location-service
+      - notification-service
+      - ride-service
+
+  auth-service:  
+    build: ./backend/services/auth-service
+    container_name: auth-service
+    restart: always
+    ports:
+      - "3001:4001"
+    env_file:
+      - ./backend/services/auth-service/.env
+    volumes:
+      - ./backend/services/auth-service:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - redis
+
+  location-service:  
+    build: ./backend/services/location-service
+    container_name: location-service
+    restart: always
+    ports:
+      - "3002:4002"
+      - "50051:50051"
+    env_file:
+      - ./backend/services/location-service/.env
+    volumes:
+      - ./backend/services/location-service:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - redis    
+      - rabbitmq
+  notification-service:  
+    build: ./backend/services/notification-service
+    container_name: notification-service
+    restart: always
+    ports:
+      - "3003:4003"
+    env_file:
+      - ./backend/services/notification-service/.env
+    volumes:
+      - ./backend/services/notification-service:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - redis    
+
+  ride-service:  
+    build: ./backend/services/ride-service
+    container_name: ride-service
+    restart: always
+    ports:
+      - "3004:4004"
+    env_file:
+      - ./backend/services/ride-service/.env
+    volumes:
+      - ./backend/services/ride-service:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - redis  
+      - rabbitmq  
+  
+  
+    
+
+
+volumes:
+  mongo_data:           

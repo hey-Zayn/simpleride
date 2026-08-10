@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  RIDER
+  DRIVER
+  ADMIN
+}
+
+enum VehicleType {
+  BIKE
+  MINI
+  COMFORT
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  fullName      String
+  phone         String         @unique
+  role          Role           @default(RIDER)
+  isVerified    Boolean        @default(false)
+  refreshToken  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  driverProfile DriverProfile?
+
+  @@map("users")
+}
+
+model DriverProfile {
+  id            String      @id @default(uuid())
+  userId        String      @unique
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType   VehicleType @default(BIKE)
+  vehicleNumber String      @unique
+  licenseNumber String      @unique
+  isOnline      Boolean     @default(false)
+  isBusy        Boolean     @default(false)
+  rating        Float       @default(5.0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("driver_profiles")
+}

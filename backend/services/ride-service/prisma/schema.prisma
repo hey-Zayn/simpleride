@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum VehicleType {
+  BIKE
+  MINI
+  COMFORT
+}
+
+enum RideStatus {
+  REQUESTED
+  SEARCHING
+  ACCEPTED
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Ride {
+  id       String  @id @default(uuid())
+  riderId  String
+  driverId String?
+
+  vehicleType VehicleType @default(BIKE)
+
+  pickupLat     Float
+  pickupLng     Float
+  pickupAddress String
+
+  dropoffLat     Float
+  dropoffLng     Float
+  dropoffAddress String
+
+  status RideStatus @default(REQUESTED)
+
+  calculatedFare Float // System estimated fare (PKR)
+  offeredFare    Float // User custom bid fare (PKR)
+  finalFare      Float? // Final agreed price upon acceptance (PKR)
+
+  distanceKm   Float
+  durationMins Float
+
+  otp String? // OTP verification code to start the ride
+
+  bids Bid[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("rides")
+}
+
+model Bid {
+  id          String    @id @default(uuid())
+  rideId      String
+  ride        Ride      @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  driverId    String
+  counterFare Float // Driver counter-offer amount in PKR
+  status      BidStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("bids")
+}

@@ -1,0 +1,159 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* Brand Luxury Color Palette */
+  --color-brand-canvas: #08090B;
+  --color-brand-surface: #12141A;
+  --color-brand-card: #16181E;
+  --color-brand-input: #1C1E26;
+  --color-brand-border: #282C37;
+  --color-brand-gold: #D4AF37;
+  --color-brand-gold-hover: #C5A028;
+  --color-brand-platinum: #E2E8F0;
+  --color-brand-emerald: #10B981;
+  --color-brand-text: #F8FAFC;
+  --color-brand-muted: #8E99A8;
+
+  /* Custom Luxury Shadows */
+  --shadow-luxury: 0 25px 60px -15px rgba(0, 0, 0, 0.9);
+  --shadow-gold-glow: 0 0 30px -5px rgba(212, 175, 55, 0.35);
+
+  /* Fonts */
+  /* --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace; */
+  --font-sans: var(--font-suisse), sans-serif;
+  --font-display: var(--font-agrandir), sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  
+  /* Map Shadcn Variables directly to Luxury Dark Mode by Default */
+  --background: #08090B;
+  --foreground: #F8FAFC;
+  --card: #12141A;
+  --card-foreground: #F8FAFC;
+  --popover: #12141A;
+  --popover-foreground: #F8FAFC;
+  --primary: #D4AF37;
+  --primary-foreground: #08090B;
+  --secondary: #16181E;
+  --secondary-foreground: #F8FAFC;
+  --muted: #16181E;
+  --muted-foreground: #8E99A8;
+  --accent: #16181E;
+  --accent-foreground: #F8FAFC;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #282C37;
+  --input: #1C1E26;
+  --ring: #D4AF37;
+  --radius: 0.75rem;
+
+  --sidebar: #12141A;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #D4AF37;
+  --sidebar-primary-foreground: #08090B;
+  --sidebar-accent: #16181E;
+  --sidebar-accent-foreground: #F8FAFC;
+  --sidebar-border: #282C37;
+  --sidebar-ring: #D4AF37;
+}
+
+body {
+  background-color: var(--color-brand-canvas);
+  color: var(--color-brand-text);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #08090B;
+}
+::-webkit-scrollbar-thumb {
+  background: #282C37;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.dark {
+  --background: #08090B;
+  --foreground: #F8FAFC;
+  --card: #12141A;
+  --card-foreground: #F8FAFC;
+  --popover: #12141A;
+  --popover-foreground: #F8FAFC;
+  --primary: #D4AF37;
+  --primary-foreground: #08090B;
+  --secondary: #16181E;
+  --secondary-foreground: #F8FAFC;
+  --muted: #16181E;
+  --muted-foreground: #8E99A8;
+  --accent: #16181E;
+  --accent-foreground: #F8FAFC;
+  --border: #282C37;
+  --input: #1C1E26;
+  --ring: #D4AF37;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

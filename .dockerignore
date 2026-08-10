@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs & cache
+dist
+build
+.cache
+.npm
+backend/node_modules
+frontend/node_modules
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Git and IDE metadata
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation & Tests
+README.md
+coverage
+*.test.js
+*.spec.js

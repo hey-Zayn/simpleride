@@ -1,0 +1,16 @@
+PORT=5000
+
+REDIS_URI=redis://redis:12345
+
+RABBITMQ_URL=amqp://rabbitmq:12345
+
+JWT_SECRET=JWT_SECRET
+
+JWT_REFRESH_SECRET=JWT_REFRESH_SECRET
+
+# Services URLs
+
+AUTH_SERVICE_URL=http://auth-service:4001
+LOCATION_SERVICE_URL=http://location-service:4002
+NOTIFICATION_SERVICE_URL=http://notification-service:4003
+RIDE_SERVICE_URL=http://ride-service:4004
