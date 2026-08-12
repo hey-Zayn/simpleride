@@ -6,14 +6,14 @@ const GATEWAY_URL = (process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:80
 // Location service has its own Socket.IO server on a separate port
 const LOCATION_URL = (process.env.NEXT_PUBLIC_LOCATION_SOCKET_URL || 'http://localhost:3002').replace(/\/$/, '');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. Notification Socket
-//    Connects through API Gateway → notification-service
-//    IMPORTANT: Use the DEFAULT Socket.IO path (/socket.io). Do NOT override
-//    the path — a custom path causes the WS handshake to fail and floods the
-//    console with infinite reconnect attempts.
-// ─────────────────────────────────────────────────────────────────────────────
+/// ─────────────────────────────────────────────────────────────────────────────
+/// 1. Notification Socket
+///    Connects through API Gateway → notification-service
+///    MUST use path '/socket.io' — the gateway proxies only this path.
+///    Connecting to default '/' causes the upgrade to be destroyed by the gateway.
+/// ─────────────────────────────────────────────────────────────────────────────
 export const notificationSocket: Socket = io(GATEWAY_URL, {
+  path: '/socket.io',
   autoConnect: false,
   transports: ['websocket', 'polling'], // websocket first, fallback to polling
   reconnection: true,

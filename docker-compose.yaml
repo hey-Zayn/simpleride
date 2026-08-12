@@ -10,14 +10,14 @@ services:
     depends_on:
       - gateway  
    
-  mongodb:
-    image: mongo
-    container_name: mongodb
-    restart : always
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
+  # mongodb:
+  #   image: mongo
+  #   container_name: mongodb
+  #   restart : always
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo_data:/data/db
   redis:
     image: redis
     container_name: redis
@@ -66,7 +66,7 @@ services:
       - ./backend/services/auth-service:/app
       - /app/node_modules
     depends_on:
-      - mongodb
+      # - mongodb
       - redis
 
   location-service:  
@@ -82,7 +82,7 @@ services:
       - ./backend/services/location-service:/app
       - /app/node_modules
     depends_on:
-      - mongodb
+      # - mongodb
       - redis    
       - rabbitmq
   notification-service:  
@@ -97,7 +97,7 @@ services:
       - ./backend/services/notification-service:/app
       - /app/node_modules
     depends_on:
-      - mongodb
+      # - mongodb
       - redis    
 
   ride-service:  
@@ -112,7 +112,7 @@ services:
       - ./backend/services/ride-service:/app
       - /app/node_modules
     depends_on:
-      - mongodb
+      # - mongodb
       - redis  
       - rabbitmq  
   
@@ -120,5 +120,5 @@ services:
     
 
 
-volumes:
-  mongo_data:           
+# volumes:
+  # mongo_data:           

@@ -1,0 +1,22 @@
+# Product Requirements Document (PRD)
+
+## Core Features & Business Logic
+
+### 1. Bidding Engine
+
+- **Rider Bid:** Allowed range is -5% to +15% of the calculated base fare.
+- **Counter Bidding:** Drivers can submit counter-offers. When a rider accepts counter-bid B, all other pending bids (A, C, D) are atomically marked `REJECTED`.
+- **Request Expiration:** Unaccepted ride requests automatically time out after 120 seconds via a BullMQ delayed job.
+- **Display Bids** To display Riders bids use toaster or any popup with timer of 2 minutes for each bid do the same for the Drivers bid but show it for 30secs only.
+
+### 2. Trip Execution & Security
+
+- **Trip Commencement:** Requires a 4-digit OTP issued at ride creation to move status from `ARRIVED` to `IN_PROGRESS`.
+- **Location Streaming:** Active trips stream updates at 2-second intervals using volatile WebSocket emissions.
+
+### 3. Rides Engine
+
+- **Disable button** When rider Request for the Ride and engine seraching for the ride so disable the search Driver button for 2min make it disabled when Drawer is closed and Show Searching Driver Loading screen or componet.
+- ** Show live Locations** show live location of the driver in the map when they accept the ride , do the same for the rider when they accept the ride
+- ** location for Driver ** Show Drop Off location with Route when Ride is Started show this to both rider and Driver on map.
+- ** Hidde location ** When Ride compeleted Hide Both Drivers and riders location form the map
