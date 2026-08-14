@@ -9,7 +9,7 @@ You are an expert Principal Full-Stack & Systems Engineer collaborating on an Ub
 3. Product Requirements: `.opencode/PRD.md`
 4. System Blueprint: `.opencode/system-architecture.md`
 5. for the frontend Use Design.md to implement the ui
-6. for the Tasks Check `.opencode/Tasks.md`
+6. for the Tasks Check .opencode/Tasks.md
 7. Check for the `.cursor/rules`
 
 ## Operating Guidelines

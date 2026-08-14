@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { ChevronUp, MapPin } from 'lucide-react';
 import BookingPanel from '@/components/rider/BookingPanel';
 import RiderHeader from '@/components/rider/RiderHeader';
 import MapViewSkeleton from '@/components/skeletons/MapViewSkeleton';
@@ -16,14 +15,6 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useRiderSockets } from '@/hooks/useRiderSockets';
 import { useRiderGpsTracker } from '@/hooks/useRiderGpsTracker';
 
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
-
 const MapView = dynamic(() => import('@/components/rider/MapView'), {
   ssr: false,
   loading: () => <MapViewSkeleton />,
@@ -32,7 +23,6 @@ const MapView = dynamic(() => import('@/components/rider/MapView'), {
 export default function RidePage() {
   const { user, token } = useAuthStore();
   const [activePicker, setActivePicker] = useState<'pickup' | 'dropoff' | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const {
     pickup,
@@ -43,16 +33,15 @@ export default function RidePage() {
     currentRide,
     setPickup,
     setDropoff,
-    getEstimate,
-    acceptRideBid,
     acceptCounterBid,
+    resetBookingState,
   } = useRideStore();
 
   const riderId = user?.id || ''; 
   const jwtToken = token || '';
 
   // 1. Real-Time Socket Connection for Bids and Ride Updates
-  const { counterBids, rideStatus } = useRiderSockets(riderId, currentRide?.id || null);
+  const { counterBids, rideStatus, dismissCounterBid } = useRiderSockets(riderId, currentRide?.id || null);
 
   // 2. Real-Time Live Driver Location Tracking during active trip
   const { driverCoords } = useRiderGpsTracker(
@@ -60,15 +49,14 @@ export default function RidePage() {
     jwtToken
   );
 
-  // 3. State-driven drawer opening
-  useEffect(() => {
-    if (['REQUESTED', 'ACCEPTED', 'ARRIVED', 'IN_PROGRESS', 'COMPLETED'].includes(currentRide?.status || '')) {
-      setIsDrawerOpen(true);
+  const handleAcceptBid = async (bidId: string) => {
+    if (!currentRide) return;
+    try {
+      await acceptCounterBid(currentRide.id, bidId);
+    } catch (err) {
+      console.error('Failed to accept counter bid:', err);
     }
-  }, [currentRide?.status]);
-
-  // 4. Get active incoming bid (if any) from Sockets
-  const latestCounterBid = counterBids.length > 0 ? counterBids[counterBids.length - 1] : null;
+  };
 
   const handleSelectLocation = async (coords: Coordinates) => {
     if (!activePicker) return;
@@ -87,13 +75,19 @@ export default function RidePage() {
       else setDropoff(coords, 'Selected Location');
     } finally {
       setActivePicker(null);
-      setIsDrawerOpen(true);
     }
   };
 
-  const renderDrawerStepContent = () => {
-    if (currentRide?.status === 'REQUESTED') {
-      return <SearchingDriverStep onTimeout={() => setIsDrawerOpen(false)} />;
+  const renderPanelContent = () => {
+    if (['SEARCHING', 'REQUESTED'].includes(currentRide?.status || '')) {
+      return (
+        <SearchingDriverStep
+          onTimeout={resetBookingState}
+          counterBids={counterBids}
+          onAcceptBid={(bid) => handleAcceptBid(bid.bidId)}
+          onDeclineBid={(bidId) => dismissCounterBid(bidId)}
+        />
+      );
     }
 
     if (currentRide && ['ACCEPTED', 'ARRIVED', 'IN_PROGRESS'].includes(currentRide.status)) {
@@ -101,41 +95,38 @@ export default function RidePage() {
     }
 
     if (currentRide?.status === 'COMPLETED') {
-      return <CompletedRideStep ride={currentRide} onDone={() => setIsDrawerOpen(false)} />;
+      return <CompletedRideStep ride={currentRide} onDone={resetBookingState} />;
     }
 
     return (
-      <div className="w-full">
-        <BookingPanel
-          pickupValue={pickup ? { ...pickup, address: pickupAddress } : null}
-          dropoffValue={dropoff ? { ...dropoff, address: dropoffAddress } : null}
-          onPickupChange={(coords, addr) => coords && setPickup(coords, addr)}
-          onDropoffChange={(coords, addr) => coords && setDropoff(coords, addr)}
-          onEnableMapPicker={(mode) => {
-            setActivePicker(mode);
-            setIsDrawerOpen(false);
-          }}
-          activeMapPickerMode={activePicker}
-          onRequestRideSuccess={() => setIsDrawerOpen(true)}
-        />
-      </div>
+      <BookingPanel
+        pickupValue={pickup ? { ...pickup, address: pickupAddress } : null}
+        dropoffValue={dropoff ? { ...dropoff, address: dropoffAddress } : null}
+        onPickupChange={(coords, addr) => coords && setPickup(coords, addr)}
+        onDropoffChange={(coords, addr) => coords && setDropoff(coords, addr)}
+        onEnableMapPicker={(mode) => setActivePicker(mode)}
+        activeMapPickerMode={activePicker}
+        onRequestRideSuccess={() => {}}
+      />
     );
   };
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gray-100 font-sans">
+      {/* Map View Full Bleed */}
       <div className="absolute inset-0 z-0">
         <MapView
           pickup={pickup}
           dropoff={dropoff}
           selectingMode={activePicker}
           onSelectLocation={handleSelectLocation}
-          // Blend live driver coordinates into the map markers
           driverCoords={driverCoords}
           nearbyDrivers={nearbyDrivers}
+          rideStatus={currentRide?.status || rideStatus}
         />
       </div>
 
+      {/* Header */}
       <RiderHeader
         userName={user?.fullName || 'Rider'}
         onLogout={() => {
@@ -143,69 +134,28 @@ export default function RidePage() {
         }}
       />
 
-      {/* Real Live Driver Offer Toast (Replaces Mock Timer Simulation) */}
-      {latestCounterBid && currentRide?.status === 'REQUESTED' && (
-        <DriverOfferToast
-          driverName={latestCounterBid.driverName || 'Driver'}
-          rating={latestCounterBid.driverRating || 4.9}
-          vehicle="Standard Ride"
-          offeredFare={latestCounterBid.counterFare}
-          durationMins={3}
-          onAccept={async () => {
-            if (!currentRide) return;
-            try {
-              await acceptCounterBid(currentRide.id, latestCounterBid.bidId);
-            } catch (err) {
-              console.error('Failed to accept counter bid:', err);
-            } finally {
-              setIsDrawerOpen(true);
-            }
-          }}
-          onDecline={() => {
-            // Dismiss bid locally
-          }}
-        />
+      {/* Real Live Driver Offer Toasts Overlay (Fixed top-20 right-4 z-[9999] floating above Leaflet map) */}
+      {['SEARCHING', 'REQUESTED'].includes(currentRide?.status || '') && counterBids.length > 0 && (
+        <div className="fixed top-20 right-4 z-[9999] w-full max-w-sm space-y-3.5 pointer-events-auto px-3 sm:px-0">
+          {counterBids.map((bid) => (
+            <DriverOfferToast
+              key={bid.bidId}
+              driverName={bid.driverName || 'Driver'}
+              rating={bid.driverRating || 4.9}
+              vehicle="Standard Ride"
+              offeredFare={bid.counterFare}
+              durationMins={3}
+              onAccept={() => handleAcceptBid(bid.bidId)}
+              onDecline={() => dismissCounterBid(bid.bidId)}
+            />
+          ))}
+        </div>
       )}
 
-      {/* Drawer Container */}
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[500px] z-40">
-          <DrawerTrigger asChild>
-            <button className="w-full bg-[#141414]/90 backdrop-blur-md border border-white/20 rounded-sm p-3 shadow-xl flex items-center justify-between">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-9 h-9 rounded-sm bg-[#C1F11D] flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5 text-[#141414]" strokeWidth={1.75} />
-                </div>
-                <div className="text-left overflow-hidden">
-                  <h3 className="font-display font-bold text-sm text-white/95 truncate">
-                    {currentRide ? 'Driver Assigned' : 'Where are you going?'}
-                  </h3>
-                  <p className="font-display text-xs text-white/70 truncate">
-                    {pickupAddress || 'Set pickup and drop-off points'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 bg-[#C1F11D] text-[#141414] px-3.5 py-2 rounded-sm text-xs font-display font-bold shrink-0">
-                <span>{currentRide ? 'View' : 'Book'}</span>
-                <ChevronUp className="w-4 h-4" strokeWidth={1.75} />
-              </div>
-            </button>
-          </DrawerTrigger>
-        </div>
-
-        <DrawerContent className="bg-white/95 backdrop-blur-md border-t border-white/20 rounded-t-md shadow-lg h-auto max-h-[85vh] p-0">
-          <div className="w-full px-4 sm:px-8 py-3">
-            <DrawerHeader className="p-0 pb-1">
-              <DrawerTitle className="sr-only">Ride Step Details</DrawerTitle>
-            </DrawerHeader>
-
-            <div className="w-full overflow-y-auto no-scrollbar py-2">
-              {renderDrawerStepContent()}
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
+      {/* Full-Width Bottom Overlay Panel (Booking, Searching, Matched Driver, Completed) */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 w-full bg-white/95 backdrop-blur-md border-t border-black/10 rounded-t-2xl shadow-2xl p-4 sm:p-6 overflow-y-auto max-h-[85vh] md:max-h-[60vh] no-scrollbar transition-all duration-300 font-sans pointer-events-auto">
+        {renderPanelContent()}
+      </div>
     </div>
   );
 }

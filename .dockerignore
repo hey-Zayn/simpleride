@@ -9,14 +9,10 @@ yarn-error.log*
 dist
 build
 .cache
-.npm
-backend/node_modules
-frontend/node_modules
+*.lock
 
 # Environment variables & secrets
 .env
-.env.*
-!.env.example
 *.pem
 *.key
 
@@ -26,8 +22,6 @@ frontend/node_modules
 .gitattributes
 .vscode
 .idea
-*.swp
-*.swo
 
 # OS files
 .DS_Store
@@ -38,3 +32,13 @@ README.md
 coverage
 *.test.js
 *.spec.js
+**/*.test.*
+**/*.spec.*
+
+# TypeScript
+tsconfig.json
+*.tsbuildinfo
+
+# Docker
+Dockerfile
+.dockerignore

@@ -76,6 +76,7 @@ export default function DriverDashboard() {
           dropoff={dropoffCoords}
           driverLocation={driverLocation}
           showDriverMarker={isOnline}
+          rideStatus={acceptedRide ? 'ACCEPTED' : 'SEARCHING'}
         />
       </div>
 
@@ -152,16 +153,16 @@ export default function DriverDashboard() {
           </div>
         )}
 
-        {/* Incoming Ride Request Toast Stack */}
-        <div className="pointer-events-auto self-center md:self-end w-full max-w-sm">
-          {activeRequest && !acceptedRide && (
+        {/* Incoming Ride Request Toast Stack (Fixed top-20 right-4 z-[9999] floating above Leaflet map) */}
+        {activeRequest && !acceptedRide && (
+          <div className="fixed top-20 right-4 z-[9999] w-full max-w-sm pointer-events-auto px-3 sm:px-0">
             <RideRequestToast
               request={activeRequest}
               onAccept={handleAcceptRequest}
               onDecline={handleDeclineRequest}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,6 @@
+---
+alwaysApply: true
+---
 # Design.md — RideFlow Frontend Design System
 
 > Reference for `opencode` when generating/refactoring components. This is the single source of truth for visual and interaction patterns. Read before creating or editing anything in `src/components/`.

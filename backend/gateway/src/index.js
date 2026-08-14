@@ -29,8 +29,7 @@ app.use("/location", proxy(LOCATION_URL));
 app.use("/notification", proxy(NOTIFICATION_URL));
 app.use("/ride", proxy(RIDE_URL));
 
-// Proxy Socket.IO HTTP polling handshakes directly to notification-service
-app.use("/socket.io", proxy(NOTIFICATION_URL));
+
 
 // Create HTTP Server instance wrapping Express
 const server = http.createServer(app);

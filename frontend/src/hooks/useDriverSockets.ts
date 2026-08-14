@@ -55,8 +55,10 @@ export function useDriverSockets(vehicleType: string, isOnline: boolean, userId:
         }, 1000);
     }, [clearTimer]);
 
+    const [assignedRide, setAssignedRide] = useState<any | null>(null);
+
     useEffect(() => {
-        if (!isOnline || !userId) {
+        if (!isOnline) {
             if (notificationSocket.connected) notificationSocket.disconnect();
             dismissRequest();
             return;
@@ -66,15 +68,25 @@ export function useDriverSockets(vehicleType: string, isOnline: boolean, userId:
             notificationSocket.connect();
         }
 
-        // Join personal room and vehicle pool room
-        notificationSocket.emit('join', { userId });
-        notificationSocket.emit('join_driver_pool', { vehicleType: vehicleType.toUpperCase() });
+        const joinRooms = () => {
+            if (userId) {
+                notificationSocket.emit('join', { userId });
+            }
+            const vType = (vehicleType || 'MINI').toUpperCase();
+            notificationSocket.emit('join_driver_pool', { vehicleType: vType });
+            notificationSocket.emit('join_driver_pool', { vehicleType: vType.toLowerCase() });
+            notificationSocket.emit('join_driver_pool', { vehicleType: 'ALL' });
+        };
+
+        joinRooms();
 
         // Listeners
         const handleNewRide = (data: IncomingRideRequest) => {
+            const rideId = data.rideId || data.id;
             const normalizedData: IncomingRideRequest = {
                 ...data,
-                id: data.id || data.rideId || 'ride_unknown',
+                id: rideId,
+                rideId: rideId,
             };
             setActiveRequest(normalizedData);
             startCountdown();
@@ -90,17 +102,48 @@ export function useDriverSockets(vehicleType: string, isOnline: boolean, userId:
             });
         };
 
+        const handleRideAssigned = (data: any) => {
+            dismissRequest();
+            setAssignedRide((prev: any) => ({
+                ...(prev || {}),
+                ...data,
+                id: data.rideId || data.id,
+                status: data.status || 'ACCEPTED',
+            }));
+        };
+
+        const handleStatusUpdate = (data: { rideId?: string; status: string }) => {
+            setAssignedRide((prev: any) => {
+                if (!prev) return prev;
+                if (data.rideId && prev.id !== data.rideId) return prev;
+                return {
+                    ...prev,
+                    status: data.status,
+                };
+            });
+        };
+
+        notificationSocket.on('connect', joinRooms);
         notificationSocket.on('ride.requested', handleNewRide);
         notificationSocket.on('ride:removed', handleRideRemoved);
         notificationSocket.on('ride:expired', handleRideRemoved);
+        notificationSocket.on('ride.accepted', handleRideAssigned);
+        notificationSocket.on('ride:accepted', handleRideAssigned);
+        notificationSocket.on('ride.assigned', handleRideAssigned);
+        notificationSocket.on('ride:status_updated', handleStatusUpdate);
 
         return () => {
+            notificationSocket.off('connect', joinRooms);
             notificationSocket.off('ride.requested', handleNewRide);
             notificationSocket.off('ride:removed', handleRideRemoved);
             notificationSocket.off('ride:expired', handleRideRemoved);
+            notificationSocket.off('ride.accepted', handleRideAssigned);
+            notificationSocket.off('ride:accepted', handleRideAssigned);
+            notificationSocket.off('ride.assigned', handleRideAssigned);
+            notificationSocket.off('ride:status_updated', handleStatusUpdate);
             clearTimer();
         };
     }, [isOnline, vehicleType, userId, startCountdown, dismissRequest, clearTimer]);
 
-    return { activeRequest, timeLeft, dismissRequest, clearRequest: dismissRequest };
+    return { activeRequest, assignedRide, setAssignedRide, timeLeft, dismissRequest, clearRequest: dismissRequest };
 }

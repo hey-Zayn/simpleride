@@ -18,8 +18,15 @@ export function useRiderSockets(riderId: string, currentRideId: string | null) {
     const [counterBids, setCounterBids] = useState<DriverCounterBid[]>([]);
     const [rideStatus, setRideStatus] = useState<string>('SEARCHING');
 
+    const dismissCounterBid = (bidId: string) => {
+        setCounterBids((prev) => prev.filter((b) => b.bidId !== bidId));
+    };
+
     useEffect(() => {
-        if (!riderId || !currentRideId) return;
+        if (!riderId || !currentRideId) {
+            setCounterBids([]);
+            return;
+        }
 
         if (!notificationSocket.connected) {
             notificationSocket.connect();
@@ -29,7 +36,7 @@ export function useRiderSockets(riderId: string, currentRideId: string | null) {
         notificationSocket.emit('join', { userId: riderId });
 
         const handleCounterBid = (data: DriverCounterBid) => {
-            if (data.rideId === currentRideId) {
+            if (!currentRideId || String(data.rideId) === String(currentRideId)) {
                 setCounterBids((prev) => {
                     // Prevent duplicates
                     if (prev.some((b) => b.bidId === data.bidId)) return prev;
@@ -38,14 +45,21 @@ export function useRiderSockets(riderId: string, currentRideId: string | null) {
             }
         };
 
-        const handleStatusUpdate = (data: { rideId?: string; status: string }) => {
+        const handleStatusUpdate = (data: { rideId?: string; status: string; driver?: any; otp?: string; finalFare?: number; [key: string]: any }) => {
             setRideStatus(data.status);
+            if (data.status === 'ACCEPTED') {
+                setCounterBids([]);
+            }
             useRideStore.setState((state) => {
                 if (state.currentRide) {
                     return {
                         currentRide: {
                             ...state.currentRide,
+                            ...data,
+                            id: data.rideId || state.currentRide.id,
                             status: data.status as any,
+                            otp: data.otp || state.currentRide.otp,
+                            fare: data.finalFare || data.fare || state.currentRide.fare,
                         },
                     };
                 }
@@ -53,7 +67,10 @@ export function useRiderSockets(riderId: string, currentRideId: string | null) {
             });
         };
 
-        const handleRideAccepted = (data: any) => handleStatusUpdate({ status: 'ACCEPTED', ...data });
+        const handleRideAccepted = (data: any) => {
+            setCounterBids([]);
+            handleStatusUpdate({ status: 'ACCEPTED', ...data });
+        };
         const handleRideArrived = (data: any) => handleStatusUpdate({ status: 'ARRIVED', ...data });
         const handleRideInProgress = (data: any) => handleStatusUpdate({ status: 'IN_PROGRESS', ...data });
         const handleRideCompleted = (data: any) => handleStatusUpdate({ status: 'COMPLETED', ...data });
@@ -86,5 +103,5 @@ export function useRiderSockets(riderId: string, currentRideId: string | null) {
         };
     }, [riderId, currentRideId]);
 
-    return { counterBids, rideStatus };
+    return { counterBids, rideStatus, dismissCounterBid };
 }

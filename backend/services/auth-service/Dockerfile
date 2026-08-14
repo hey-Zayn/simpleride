@@ -1,16 +1,20 @@
+# =============================
+# AUTH SERVICE - Lean Production Dockerfile
+# =============================
 FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json .
+# Copy package files (leverages Docker cache)
+COPY package.json package-lock.json ./
 
-RUN npm install
+# Install production dependencies only (fast, deterministic)
+RUN npm ci --omit=dev
 
-COPY prisma ./prisma/
-RUN npx prisma generate
-
+# Copy source code (exclude node_modules via .dockerignore)
 COPY . .
 
 EXPOSE 4001
 
-CMD ["npm", "run", "dev"]
+# Production: start directly (no nodemon)
+CMD ["node", "src/index.js"]

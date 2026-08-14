@@ -120,24 +120,31 @@ export const createRideRequest = async (riderId, rideData) => {
  * Driver accepts the rider's initial bid with Race Condition Guard (Atomic updateMany).
  */
 export const acceptRiderBid = async (rideId, driverId) => {
-    const existingRide = await prisma.ride.findUnique({ where: { id: rideId } });
-    if (!existingRide) throw new Error('Ride not found');
+    // Use a transaction to atomically read offeredFare and update the ride,
+    // preventing stale finalFare if offeredFare changes concurrently.
+    const updateResult = await prisma.$transaction(async (tx) => {
+        // First, get the current ride to read offeredFare atomically
+        const ride = await tx.ride.findUnique({ where: { id: rideId } });
+        if (!ride) throw new Error('Ride not found');
 
-    // Atomic update condition: status must still be SEARCHING or REQUESTED
-    const updateResult = await prisma.ride.updateMany({
-        where: {
-            id: rideId,
-            status: { in: ['SEARCHING', 'REQUESTED'] },
-        },
-        data: {
-            driverId,
-            finalFare: existingRide.offeredFare, // Lock in initial rider bid
-            status: 'ACCEPTED',
-        },
+        // Atomic update condition: status must still be SEARCHING or REQUESTED
+        const updateResult = await tx.ride.updateMany({
+            where: {
+                id: rideId,
+                status: { in: ['SEARCHING', 'REQUESTED'] },
+            },
+            data: {
+                driverId,
+                finalFare: ride.offeredFare, // Lock in current rider bid atomically
+                status: 'ACCEPTED',
+            },
+        });
+
+        return { updateResult, offeredFare: ride.offeredFare };
     });
 
     // If count is 0, another driver accepted or expired concurrently
-    if (updateResult.count === 0) {
+    if (updateResult.updateResult.count === 0) {
         throw new Error('Too late! Another driver has already accepted this ride.');
     }
 
@@ -148,10 +155,22 @@ export const acceptRiderBid = async (rideId, driverId) => {
     await cancelBidExpiration(rideId);
 
     await publishEvent('ride.accepted', {
+        id: updatedRide.id,
         rideId: updatedRide.id,
         riderId: updatedRide.riderId,
         driverId: updatedRide.driverId,
         finalFare: updatedRide.finalFare,
+        fare: updatedRide.finalFare,
+        offeredFare: updatedRide.offeredFare,
+        pickupAddress: updatedRide.pickupAddress,
+        dropoffAddress: updatedRide.dropoffAddress,
+        pickupLat: updatedRide.pickupLat,
+        pickupLng: updatedRide.pickupLng,
+        dropoffLat: updatedRide.dropoffLat,
+        dropoffLng: updatedRide.dropoffLng,
+        status: updatedRide.status,
+        otp: updatedRide.otp,
+        vehicleType: updatedRide.vehicleType,
     });
 
     return updatedRide;
@@ -164,7 +183,7 @@ export const driverCounterBid = async (rideId, driverId, counterFare) => {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
 
     if (!ride) throw new Error('Ride not found');
-    if (ride.status !== 'SEARCHING') throw new Error('Ride is not accepting bids');
+    if (!['SEARCHING', 'REQUESTED'].includes(ride.status)) throw new Error('Ride is not accepting bids');
 
     const bid = await prisma.bid.create({
         data: {
@@ -202,7 +221,7 @@ export const acceptDriverCounterBid = async (rideId, bidId, riderId) => {
         prisma.ride.updateMany({
             where: {
                 id: rideId,
-                status: 'SEARCHING', // Must still be searching
+                status: { in: ['SEARCHING', 'REQUESTED'] }, // Must still be searching/requested
             },
             data: {
                 driverId: targetBid.driverId,
@@ -230,10 +249,22 @@ export const acceptDriverCounterBid = async (rideId, bidId, riderId) => {
     await cancelBidExpiration(rideId);
 
     await publishEvent('ride.accepted', {
+        id: updatedRide.id,
         rideId: updatedRide.id,
         riderId: updatedRide.riderId,
         driverId: updatedRide.driverId,
         finalFare: updatedRide.finalFare,
+        fare: updatedRide.finalFare,
+        offeredFare: updatedRide.offeredFare,
+        pickupAddress: updatedRide.pickupAddress,
+        dropoffAddress: updatedRide.dropoffAddress,
+        pickupLat: updatedRide.pickupLat,
+        pickupLng: updatedRide.pickupLng,
+        dropoffLat: updatedRide.dropoffLat,
+        dropoffLng: updatedRide.dropoffLng,
+        status: updatedRide.status,
+        otp: updatedRide.otp,
+        vehicleType: updatedRide.vehicleType,
     });
 
     return updatedRide;

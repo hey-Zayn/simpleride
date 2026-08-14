@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Star, MapPin, Car, Sparkles } from 'lucide-react';
+import { CheckCircle2, MapPin, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRideStore, Ride } from '@/store/useRideStore';
 
@@ -18,18 +18,18 @@ export default function CompletedRideStep({ ride, onDone }: CompletedRideStepPro
   };
 
   return (
-    <div className="w-full flex flex-col items-center py-4 space-y-5 text-center font-sans">
+    <div className="w-full flex flex-col items-center py-2 space-y-4 text-center font-sans">
       {/* Icon Badge */}
       <div className="relative flex items-center justify-center">
-        <div className="w-16 h-16 rounded-full bg-[#C1F11D]/20 flex items-center justify-center animate-pulse" />
-        <div className="absolute w-12 h-12 rounded-full bg-[#141414] text-[#C1F11D] flex items-center justify-center shadow-lg">
-          <CheckCircle2 className="w-7 h-7 text-[#C1F11D]" />
+        <div className="w-16 h-16 rounded-full bg-[#F47920]/20 flex items-center justify-center animate-pulse" />
+        <div className="absolute w-12 h-12 rounded-full bg-[#141414] text-[#F47920] flex items-center justify-center shadow-lg border-2 border-white">
+          <CheckCircle2 className="w-7 h-7 text-[#F47920]" />
         </div>
       </div>
 
       {/* Header */}
       <div>
-        <h3 className="text-xl font-display font-black text-[#141414] tracking-tight">
+        <h3 className="text-xl font-bold text-[#141414] tracking-tight">
           You have arrived!
         </h3>
         <p className="text-xs text-gray-500 font-medium">
@@ -37,33 +37,34 @@ export default function CompletedRideStep({ ride, onDone }: CompletedRideStepPro
         </p>
       </div>
 
-      {/* Fare Card */}
-      <div className="w-full bg-gray-50 border border-gray-200 rounded-sm p-4 space-y-3 text-left">
-        <div className="flex items-center justify-between border-b border-gray-200/80 pb-2.5">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Fare Paid</span>
-          <span className="text-lg font-mono font-black text-emerald-600">
-            PKR {ride.offeredFare || ride.fare}
+      {/* Fare & Route Card Grid */}
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col justify-center">
+          <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Total Fare Paid</span>
+          <span className="text-xl font-mono font-black text-emerald-600 pt-1">
+            PKR {(ride.offeredFare || ride.fare || 0).toLocaleString()}
           </span>
         </div>
 
-        <div className="space-y-2 text-xs">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 text-xs">
           <div className="flex items-start gap-2 text-gray-700">
-            <MapPin className="w-3.5 h-3.5 text-[#C1F11D] mt-0.5 shrink-0" />
-            <p className="font-medium truncate">{ride.pickupAddress}</p>
+            <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <p className="font-medium truncate">{ride.pickupAddress || 'Pickup Location'}</p>
           </div>
           <div className="flex items-start gap-2 text-gray-700">
-            <MapPin className="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0" />
-            <p className="font-medium truncate">{ride.dropoffAddress}</p>
+            <MapPin className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <p className="font-medium truncate">{ride.dropoffAddress || 'Destination'}</p>
           </div>
         </div>
       </div>
 
       {/* Action Button */}
       <Button
+        type="button"
         onClick={handleFinish}
-        className="w-full bg-[#141414] hover:bg-black text-[#C1F11D] font-display font-bold rounded-sm py-3 text-sm shadow-md"
+        className="w-full bg-[#141414] hover:bg-black text-[#F47920] font-bold rounded-xl py-3.5 text-sm shadow-lg"
       >
-        <Sparkles className="w-4 h-4 mr-2" />
+        <Sparkles className="w-4 h-4 mr-2 text-[#F47920]" />
         Book Another Ride
       </Button>
     </div>

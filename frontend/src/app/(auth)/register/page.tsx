@@ -138,23 +138,23 @@ function RegisterForm() {
       }
     >
       {/* Progress Bar */}
-      <div className="w-full bg-[#DCDBC7] h-1.5 rounded-md mb-6 overflow-hidden">
+      <div className="w-full bg-[#DEDFDE] h-1.5 rounded-md mb-6 overflow-hidden">
         <div
-          className="bg-[#C1F11D] h-full transition-all duration-300 ease-out"
+          className="bg-[#F47920] h-full transition-all duration-300 ease-out"
           style={{ width: `${(step / totalSteps) * 100}%` }}
         />
       </div>
 
       {/* Role Switcher */}
       {step === 1 && (
-        <div className="grid grid-cols-2 gap-2 p-1.5 font-display bg-white rounded-md mb-6 border-2 border-black/20">
+        <div className="grid grid-cols-2 gap-2 p-1.5 bg-[#FCFFFF] rounded-md mb-6 border border-[#DEDFDE]">
           <button
             type="button"
             onClick={() => handleRoleChange('RIDER')}
-            className={`flex items-center justify-center gap-2 py-3 text-xs font-sans font-bold rounded-sm transition-all ${
+            className={`flex items-center justify-center gap-2 py-3 text-xs font-display font-bold rounded-sm transition-all ${
               role === 'RIDER'
-                ? 'bg-[#C1F11D] text-[#141414] shadow-sm border-2 border-[#9DD90D]'
-                : 'text-[#141414]/60 hover:text-[#141414]'
+                ? 'bg-[#F47920] text-[#141414]'
+                : 'text-[#141414] hover:text-[#F47920] rounded-sm border-none'
             }`}
           >
             <UserIcon className="w-4 h-4 text-[#141414]" />
@@ -164,10 +164,10 @@ function RegisterForm() {
           <button
             type="button"
             onClick={() => handleRoleChange('DRIVER')}
-            className={`flex items-center justify-center gap-2 py-3 text-xs font-sans font-bold rounded-sm transition-all ${
+            className={`flex items-center justify-center gap-2 py-3 text-xs font-display font-bold rounded-sm transition-all ${
               role === 'DRIVER'
-                ? 'bg-[#C1F11D] text-[#141414] shadow-sm border-2 border-[#9DD90D]'
-                : 'text-[#141414]/60 hover:text-[#141414]'
+                ? 'bg-[#F47920] text-[#141414]'
+                : 'text-[#141414] hover:text-[#F47920] rounded-sm border-none'
             }`}
           >
             <Car className="w-4 h-4 text-[#141414]" />
@@ -177,7 +177,7 @@ function RegisterForm() {
       )}
 
       {errorMessage && (
-        <div className="mb-5 p-3.5 rounded-md bg-rose-100 border-2 border-rose-300 text-rose-800 text-xs font-sans font-semibold">
+        <div className="mb-5 p-3.5 rounded-sm bg-[#FDE8DD] border-2 border-[#F87171] text-[#B91C1C] text-xs font-display font-semibold">
           {errorMessage}
         </div>
       )}
@@ -194,10 +194,10 @@ function RegisterForm() {
                 type="text"
                 {...register('fullName')}
                 placeholder="Zain Butt"
-                className="w-full font-display bg-white border-2 border-black/20 rounded-md px-4 py-3 text-sm text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-black/40 transition-all"
+                className="w-full bg-[#FCFFFF] border border-[#DEDFDE] rounded-md px-4 py-3 text-sm font-display text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-[#F47920] transition-all"
               />
               {errors.fullName && (
-                <p className="text-xs font-semibold text-rose-600 mt-1">
+                <p className="text-xs font-semibold text-[#B91C1C] mt-1">
                   {errors.fullName.message}
                 </p>
               )}
@@ -211,10 +211,10 @@ function RegisterForm() {
                 type="email"
                 {...register('email')}
                 placeholder={role === 'DRIVER' ? 'driver@me.com' : 'rider@me.com'}
-                className="w-full font-display bg-white border-2 border-black/20 rounded-md px-4 py-3 text-sm text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-black/40 transition-all"
+                className="w-full bg-[#FCFFFF] border border-[#DEDFDE] rounded-md px-4 py-3 text-sm font-display text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-[#F47920] transition-all"
               />
               {errors.email && (
-                <p className="text-xs font-semibold text-rose-600 mt-1">{errors.email.message}</p>
+                <p className="text-xs font-semibold text-[#B91C1C] mt-1">{errors.email.message}</p>
               )}
             </div>
 
@@ -226,10 +226,10 @@ function RegisterForm() {
                 type="tel"
                 {...register('phone')}
                 placeholder="+923000000000"
-                className="w-full font-display bg-white border-2 border-black/20 rounded-md px-4 py-3 text-sm text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-black/40 transition-all"
+                className="w-full bg-[#FCFFFF] border border-[#DEDFDE] rounded-md px-4 py-3 text-sm font-display text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-[#F47920] transition-all"
               />
               {errors.phone && (
-                <p className="text-xs font-semibold text-rose-600 mt-1">{errors.phone.message}</p>
+                <p className="text-xs font-semibold text-[#B91C1C] mt-1">{errors.phone.message}</p>
               )}
             </div>
           </div>
@@ -247,18 +247,18 @@ function RegisterForm() {
                   type={showPassword ? 'text' : 'password'}
                   {...register('password')}
                   placeholder="••••••••"
-                  className="w-full bg-white border-2 font-display border-black/20 rounded-md px-4 py-3.5 text-sm text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-black/40 transition-all pr-11"
+                  className="w-full bg-[#FCFFFF] border border-[#DEDFDE] rounded-md px-4 py-3.5 text-sm font-display text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-[#F47920] transition-all pr-11"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#141414]/50 hover:text-[#141414] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#141414]/50 hover:text-[#141414] transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs font-semibold text-rose-600 mt-1">
+                <p className="text-xs font-semibold text-[#B91C1C] mt-1">
                   {errors.password.message}
                 </p>
               )}
@@ -277,10 +277,10 @@ function RegisterForm() {
                 <button
                   type="button"
                   onClick={() => setValue('vehicleType', 'BIKE', { shouldValidate: true })}
-                  className={`flex flex-col items-center justify-center py-2.5 px-2 border-2 font-display text-xs font-bold rounded-md transition-all ${
+                  className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-sm transition-all ${
                     selectedVehicleType === 'BIKE'
-                      ? 'border-black bg-[#C1F11D] text-[#141414]'
-                      : 'border-black/20 bg-white text-[#141414]/60 hover:text-[#141414]'
+                      ? 'bg-[#F47920] text-[#141414]'
+                      : 'border border-[#DEDFDE] text-[#141414]/60 hover:bg-white'
                   }`}
                 >
                   <Bike className="w-4 h-4 mb-1" /> Bike
@@ -289,10 +289,10 @@ function RegisterForm() {
                 <button
                   type="button"
                   onClick={() => setValue('vehicleType', 'MINI', { shouldValidate: true })}
-                  className={`flex flex-col items-center justify-center py-2.5 px-2 border-2 font-display text-xs font-bold rounded-md transition-all ${
+                  className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-sm transition-all ${
                     selectedVehicleType === 'MINI'
-                      ? 'border-black bg-[#C1F11D] text-[#141414]'
-                      : 'border-black/20 bg-white text-[#141414]/60 hover:text-[#141414]'
+                      ? 'bg-[#F47920] text-[#141414]'
+                      : 'border border-[#DEDFDE] text-[#141414]/60 hover:bg-white'
                   }`}
                 >
                   <Car className="w-4 h-4 mb-1" /> Mini
@@ -301,10 +301,10 @@ function RegisterForm() {
                 <button
                   type="button"
                   onClick={() => setValue('vehicleType', 'COMFORT', { shouldValidate: true })}
-                  className={`flex flex-col items-center justify-center py-2.5 px-2 border-2 font-display text-xs font-bold rounded-md transition-all ${
+                  className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-sm transition-all ${
                     selectedVehicleType === 'COMFORT'
-                      ? 'border-black bg-[#C1F11D] text-[#141414]'
-                      : 'border-black/20 bg-white text-[#141414]/60 hover:text-[#141414]'
+                      ? 'bg-[#F47920] text-[#141414]'
+                      : 'border border-[#DEDFDE] text-[#141414]/60 hover:bg-white'
                   }`}
                 >
                   <Shield className="w-4 h-4 mb-1" /> Comfort
@@ -325,10 +325,10 @@ function RegisterForm() {
                 type="text"
                 {...register('vehicleNumber')}
                 placeholder="LEB-9447"
-                className="w-full font-display bg-white border-2 border-black/20 rounded-md px-4 py-3 text-sm text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-black/40 transition-all"
+                className="w-full bg-[#FCFFFF] border border-[#DEDFDE] rounded-md px-4 py-3 text-sm font-display text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-[#F47920] transition-all"
               />
               {errors.vehicleNumber && (
-                <p className="text-xs font-semibold text-rose-600 mt-1">
+                <p className="text-xs font-semibold text-[#B91C1C] mt-1">
                   {errors.vehicleNumber.message}
                 </p>
               )}
@@ -342,10 +342,10 @@ function RegisterForm() {
                 type="text"
                 {...register('licenseNumber')}
                 placeholder="DL-00000000000"
-                className="w-full font-display bg-white border-2 border-black/20 rounded-md px-4 py-3 text-sm text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-black/40 transition-all"
+                className="w-full bg-[#FCFFFF] border border-[#DEDFDE] rounded-md px-4 py-3 text-sm font-display text-[#141414] placeholder:text-black/40 focus:outline-none focus:border-[#F47920] transition-all"
               />
               {errors.licenseNumber && (
-                <p className="text-xs font-semibold text-rose-600 mt-1">
+                <p className="text-xs font-semibold text-[#B91C1C] mt-1">
                   {errors.licenseNumber.message}
                 </p>
               )}
@@ -359,7 +359,7 @@ function RegisterForm() {
             <button
               type="button"
               onClick={handlePrevStep}
-              className="flex-1 bg-white hover:bg-black/5 text-[#141414] font-display font-bold rounded-md py-3.5 text-sm transition-all flex items-center justify-center border-2 border-black/20"
+              className="flex-1 bg-white hover:bg-[#F47920]/20 text-[#141414] font-display font-bold rounded-md py-3.5 text-sm transition-all duration-150 ease-out flex items-center justify-center border border-[#DEDFDE]"
             >
               <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
             </button>
@@ -369,7 +369,7 @@ function RegisterForm() {
             <button
               type="button"
               onClick={handleNextStep}
-              className="flex-1 bg-[#141414] hover:bg-[#141414]/90 text-white font-display font-bold rounded-md py-3.5 text-sm transition-all flex items-center justify-center shadow-md active:scale-[0.99] border-2 border-transparent"
+              className="flex-1 bg-[#141414] hover:bg-[#141414]/90 text-white font-display font-bold rounded-md py-3.5 text-sm transition-all duration-150 ease-out flex items-center justify-center shadow-md active:scale-[0.99] border-2 border-transparent"
             >
               Next <ArrowRight className="w-4 h-4 ml-1.5" />
             </button>
@@ -377,7 +377,7 @@ function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-[#C1F11D] hover:bg-[#b2e212] text-[#141414] font-display font-bold rounded-md py-3.5 text-sm transition-all flex items-center justify-center shadow-md active:scale-[0.99] border-2 border-[#9DD90D]"
+              className="flex-1 bg-[#F47920] hover:bg-[#b2e212] text-[#141414] font-display font-bold rounded-md py-3.5 text-sm transition-all duration-150 ease-out flex items-center justify-center shadow-md active:scale-[0.99] border-2 border-transparent"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-[#141414]" />
@@ -390,11 +390,11 @@ function RegisterForm() {
       </form>
 
       {/* Bottom Link */}
-      <div className="text-center mt-6 pt-5 border-t-2 border-[#DCDBC7]">
+      <div className="text-center mt-6 pt-5 border-t border-[#DEDFDE]">
         <span className="text-xs text-[#141414]/80 font-display font-bold">Already registered? </span>
         <Link
           href="/login"
-          className="text-xs font-display text-[#141414] font-bold hover:opacity-80 ml-1"
+          className="text-xs font-display text-[#141414] font-bold hover:opacity-80 ml-1 transition-colors"
         >
           Sign in
         </Link>
@@ -407,7 +407,7 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#FFFEE9]">
+        <div className="min-h-screen flex items-center justify-center bg-[#FCFFFF]">
           <Loader2 className="w-6 h-6 animate-spin text-[#141414]" />
         </div>
       }

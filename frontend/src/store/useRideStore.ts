@@ -10,7 +10,8 @@ export type RideStatus =
     | 'ARRIVED'
     | 'IN_PROGRESS'
     | 'COMPLETED'
-    | 'CANCELLED';
+    | 'CANCELLED'
+    | 'EXPIRED';
 
 export type VehicleCategory = 'BIKE' | 'MINI' | 'COMFORT';
 
@@ -139,7 +140,7 @@ interface RideState {
     acceptRideBid: (rideId: string) => Promise<Ride>;
     submitDriverCounterBid: (rideId: string, counterFare: number) => Promise<any>;
     acceptCounterBid: (rideId: string, bidId: string) => Promise<Ride>;
-    updateRideStatus: (rideId: string, status: RideStatus) => Promise<Ride>;
+    updateRideStatus: (rideId: string, status: RideStatus, otp?: string) => Promise<Ride>;
 }
 
 // --- ZUSTAND STORE ---
@@ -243,13 +244,35 @@ export const useRideStore = create<RideState>((set, get) => ({
 
     // 2. POST /ride/api/rides/request
     requestRide: async (payload) => {
-        set({ isLoading: true, error: null });
+        const optimisticRide: Ride = {
+            id: `temp_${Date.now()}`,
+            riderId: 'current_user',
+            driverId: null,
+            pickupLat: payload.pickupLat,
+            pickupLng: payload.pickupLng,
+            pickupAddress: payload.pickupAddress,
+            dropoffLat: payload.dropoffLat,
+            dropoffLng: payload.dropoffLng,
+            dropoffAddress: payload.dropoffAddress,
+            vehicleType: payload.vehicleType,
+            status: 'REQUESTED',
+            fare: payload.offeredFare,
+            offeredFare: payload.offeredFare,
+            distanceKm: payload.distanceKm,
+            durationMins: payload.durationMins,
+            otp: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        // Immediately show Searching Driver screen without waiting for API delay
+        set({ currentRide: optimisticRide, estimate: null, isLoading: true, error: null });
+
         try {
             const response = await api.post('/ride/api/rides/request', payload);
             const ride: Ride = response.data.data || response.data.ride || response.data;
 
-            set({ currentRide: ride, estimate: null });
-            toast.success('Ride requested! Searching for nearby drivers...');
+            set({ currentRide: ride });
             return ride;
         } catch (err: any) {
             const backendError =
@@ -263,7 +286,7 @@ export const useRideStore = create<RideState>((set, get) => ({
 
             console.error('Backend Request Ride Validation Failure:', backendError);
 
-            set({ error: formattedError });
+            set({ currentRide: null, error: formattedError });
             toast.error(formattedError);
             throw err;
         } finally {
@@ -356,10 +379,13 @@ export const useRideStore = create<RideState>((set, get) => ({
     },
 
     // 8. PATCH /ride/api/rides/:id/status
-    updateRideStatus: async (rideId: string, status: RideStatus) => {
+    updateRideStatus: async (rideId: string, status: RideStatus, otp?: string) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.patch(`/ride/api/rides/${rideId}/status`, { status });
+            const payload: Record<string, any> = { status };
+            if (otp) payload.otp = otp;
+
+            const response = await api.patch(`/ride/api/rides/${rideId}/status`, payload);
             const ride: Ride = response.data.data || response.data;
             set({ currentRide: ride });
             toast.success(`Ride status updated to ${status.replace('_', ' ')}`);

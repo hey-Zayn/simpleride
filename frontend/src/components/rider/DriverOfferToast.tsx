@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Star, Check, X } from 'lucide-react';
+import { Star, Check, X, Car } from 'lucide-react';
 
 interface DriverOfferProps {
   driverName: string;
@@ -22,7 +22,7 @@ export default function DriverOfferToast({
   onAccept,
   onDecline,
 }: DriverOfferProps) {
-  const [timeLeft, setTimeLeft] = useState(15); // 15-second decision timer
+  const [timeLeft, setTimeLeft] = useState(25); // 25-second decision timer
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -37,73 +37,68 @@ export default function DriverOfferToast({
     return () => clearInterval(timer);
   }, [timeLeft, onDecline]);
 
-  const progressPercentage = (timeLeft / 15) * 100;
+  const progressPercentage = (timeLeft / 25) * 100;
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50 bg-[#141414] text-white p-4 rounded-sm shadow-2xl border border-white/10 animate-in slide-in-from-top duration-300">
+    <div className="w-full bg-[#141414] text-white p-4 rounded-xl shadow-2xl border border-white/15 animate-in fade-in slide-in-from-top-4 duration-300 font-sans pointer-events-auto">
+      {/* Top Countdown Bar */}
+      <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden mb-3">
+        <div
+          className="bg-[#F47920] h-full transition-all duration-1000 ease-linear"
+          style={{ width: `${progressPercentage}%` }}
+        />
+      </div>
+
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C1F11D] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C1F11D]"></span>
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F47920] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#F47920]"></span>
           </span>
-          <p className="text-xs font-bold uppercase tracking-wider text-[#C1F11D]">
-            New Driver Counter-Offer
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#F47920]">
+            Driver Counter Offer
           </p>
         </div>
 
-        {/* Circular Countdown Indicator */}
-        <div className="relative w-7 h-7 flex items-center justify-center text-[10px] font-bold">
-          <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 36 36">
-            <path
-              className="text-gray-700"
-              strokeWidth="3"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <path
-              className="text-[#C1F11D]"
-              strokeDasharray={`${progressPercentage}, 100`}
-              strokeWidth="3"
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-          </svg>
-          <span>{timeLeft}s</span>
-        </div>
+        <span className="text-[10px] font-mono font-bold text-gray-400 bg-white/10 px-2 py-0.5 rounded-full">
+          {timeLeft}s
+        </span>
       </div>
 
-      <div className="flex items-center justify-between bg-white/5 p-3 rounded-sm mb-4">
-        <div>
-          <h4 className="text-sm font-bold">{driverName}</h4>
-          <p className="text-xs text-gray-400">{vehicle}</p>
-          <div className="flex items-center gap-1 text-xs text-yellow-400 mt-1">
-            <Star className="w-3 h-3 fill-yellow-400" />
-            <span>{rating}</span>
-            <span className="text-gray-400">• {durationMins} mins away</span>
+      <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 mb-3">
+        <div className="space-y-0.5">
+          <h4 className="text-sm font-bold text-white tracking-tight">{driverName}</h4>
+          <p className="text-xs text-gray-400 flex items-center gap-1">
+            <Car className="w-3.5 h-3.5 text-[#F47920]" />
+            <span>{vehicle}</span>
+          </p>
+          <div className="flex items-center gap-1 text-xs text-amber-400 font-semibold pt-0.5">
+            <Star className="w-3 h-3 fill-amber-400" />
+            <span>{(rating || 4.9).toFixed(1)}</span>
+            <span className="text-gray-400 font-normal">• ~{durationMins} mins away</span>
           </div>
         </div>
+
         <div className="text-right">
-          <span className="text-[10px] uppercase font-bold text-gray-400">Offer</span>
-          <p className="text-base font-extrabold text-[#C1F11D]">PKR {offeredFare}</p>
+          <span className="text-[10px] uppercase font-bold text-gray-400 block">Counter Fare</span>
+          <p className="text-lg font-mono font-black text-[#F47920]">PKR {offeredFare.toLocaleString()}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onDecline}
-          className="flex-1 py-2 bg-white/10 hover:bg-white/20 text-white rounded-sm font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+          className="flex-1 py-2 bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-colors border border-white/10"
         >
-          <X className="w-4 h-4" /> Decline
+          <X className="w-3.5 h-3.5" /> Decline
         </button>
         <button
+          type="button"
           onClick={onAccept}
-          className="flex-1 py-2 bg-[#C1F11D] hover:bg-[#b0df19] text-[#141414] rounded-sm font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+          className="flex-1 py-2 bg-[#F47920] hover:bg-[#e06810] text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-colors shadow-lg shadow-[#F47920]/20"
         >
-          <Check className="w-4 h-4" /> Accept Ride
+          <Check className="w-3.5 h-3.5" /> Accept Offer
         </button>
       </div>
     </div>

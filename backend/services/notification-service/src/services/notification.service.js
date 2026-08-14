@@ -38,7 +38,7 @@ export const handleRideRequested = async (data) => {
         const pickupAddress = data.pickup?.address || data.pickupAddress || 'Pickup Location';
         const dropoffAddress = data.dropoff?.address || data.dropoffAddress || 'Dropoff Location';
 
-        io.to(targetRoom).emit('ride.requested', {
+        const payload = {
             id: data.rideId,
             rideId: data.rideId,
             riderId: data.riderId,
@@ -49,8 +49,12 @@ export const handleRideRequested = async (data) => {
             calculatedFare: data.calculatedFare,
             distanceKm: data.distanceKm || 5.0,
             estimatedMins: data.durationMins || 15,
-        });
-        console.log(`[Notification Service] Emitted 'ride.requested' to room '${targetRoom}'`);
+        };
+
+        io.to(`drivers:${vehicleType}`).emit('ride.requested', payload);
+        io.to(`drivers:${vehicleType.toLowerCase()}`).emit('ride.requested', payload);
+        io.to('drivers:ALL').emit('ride.requested', payload);
+        console.log(`[Notification Service] Emitted 'ride.requested' for ride ${data.rideId} to driver pool rooms.`);
     } catch (err) {
         console.error('Failed to emit ride.requested socket event:', err.message);
     }
@@ -66,13 +70,28 @@ export const handleRideAccepted = async (data) => {
         io.to(`user:${data.riderId}`).emit('ride.accepted', data);
         io.to(`user:${data.riderId}`).emit('ride:accepted', data);
 
+        // Emit to driver
+        if (data.driverId) {
+            io.to(`user:${data.driverId}`).emit('ride.accepted', data);
+            io.to(`user:${data.driverId}`).emit('ride:accepted', data);
+            io.to(`user:${data.driverId}`).emit('ride.assigned', data);
+        }
+
         // Notify driver pool to remove ride request card
         const vehicleType = (data.vehicleType || 'MINI').toUpperCase();
         io.to(`drivers:${vehicleType}`).emit('ride:removed', {
             rideId: data.rideId,
             reason: 'ACCEPTED',
         });
-        console.log(`[Notification Service] Emitted 'ride.accepted' to user:${data.riderId}`);
+        io.to(`drivers:${vehicleType.toLowerCase()}`).emit('ride:removed', {
+            rideId: data.rideId,
+            reason: 'ACCEPTED',
+        });
+        io.to('drivers:ALL').emit('ride:removed', {
+            rideId: data.rideId,
+            reason: 'ACCEPTED',
+        });
+        console.log(`[Notification Service] Emitted 'ride.accepted' to rider user:${data.riderId} and driver user:${data.driverId}`);
     } catch (err) {
         console.error('Failed to emit ride.accepted socket event:', err.message);
     }
@@ -173,6 +192,10 @@ export const handleRideCancelled = async (data) => {
 
 export const handleRideExpired = async (data) => {
     const io = getIO();
+    if (!io) {
+        console.error('[Notification Service] Socket.io not initialized, skipping ride.expired event');
+        return;
+    }
     const { rideId, riderId, vehicleType } = data;
 
     console.log(`[Notification Service] Handling ride.expired for Ride ID: ${rideId}`);
