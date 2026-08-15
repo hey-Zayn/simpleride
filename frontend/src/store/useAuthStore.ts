@@ -2,135 +2,178 @@ import { create } from 'zustand';
 import Cookies from 'js-cookie';
 import api from '@/lib/axios';
 import {
-    User,
+    DriverProfile,
     DriverStatus,
-    RegisterPayload,
     LoginPayload,
+    RegisterPayload,
+    User,
 } from '@/types/auth';
+
+interface AuthTokens {
+    accessToken: string;
+    refreshToken: string;
+}
+
+interface AuthSession {
+    user: User;
+    tokens: AuthTokens;
+}
+
+interface ApiResponse<T> {
+    data: T;
+}
+
+interface TokenResponse {
+    tokens: AuthTokens;
+}
+
+interface DriverStatusResponse {
+    data: DriverProfile;
+}
 
 interface AuthState {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-
-    // Actions
     registerUser: (payload: RegisterPayload) => Promise<User>;
     loginUser: (payload: LoginPayload) => Promise<User>;
     fetchMe: () => Promise<User | null>;
-    refreshToken: () => Promise<void>;
+    refreshToken: () => Promise<boolean>;
     updateDriverStatus: (status: DriverStatus) => Promise<void>;
     logoutUser: () => Promise<void>;
 }
 
-const getInitialToken = () => {
+const getInitialToken = (): string | null => {
     if (typeof window === 'undefined') return null;
-    return Cookies.get('token') || null;
+    return Cookies.get('token') ?? null;
 };
+
+const clearSession = (): void => {
+    Cookies.remove('token', { path: '/' });
+    if (typeof window !== 'undefined') localStorage.removeItem('refreshToken');
+};
+
+const persistSession = (tokens: AuthTokens): void => {
+    Cookies.set('token', tokens.accessToken, { expires: 1, path: '/', sameSite: 'lax' });
+    if (typeof window !== 'undefined') localStorage.setItem('refreshToken', tokens.refreshToken);
+};
+
+const getDriverStatus = (profile: DriverProfile | null | undefined): DriverStatus | undefined => {
+    if (!profile) return undefined;
+    if (profile.isBusy) return 'BUSY';
+    return profile.isOnline ? 'ONLINE' : 'OFFLINE';
+};
+
+const normalizeUser = (user: User): User => ({
+    ...user,
+    driverStatus: getDriverStatus(user.driverProfile),
+    vehicleType: user.driverProfile?.vehicleType ?? user.vehicleType,
+    vehicleNumber: user.driverProfile?.vehicleNumber ?? user.vehicleNumber,
+    licenseNumber: user.driverProfile?.licenseNumber ?? user.licenseNumber,
+});
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     token: getInitialToken(),
-    isAuthenticated: !!getInitialToken(),
+    isAuthenticated: Boolean(getInitialToken()),
     isLoading: false,
 
-    // 1. POST http://localhost:8000/auth/api/auth/register
     registerUser: async (payload) => {
         set({ isLoading: true });
         try {
-            const response = await api.post('/auth/api/auth/register', payload);
-            const { user, tokens } = response.data.data;
-            const { accessToken, refreshToken } = tokens;
-
-            Cookies.set('token', accessToken, { expires: 7, path: '/', sameSite: 'lax' });
-            if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-
-            set({ user, token: accessToken, isAuthenticated: true });
+            const response = await api.post<ApiResponse<AuthSession>>('/auth/api/auth/register', payload);
+            const user = normalizeUser(response.data.data.user);
+            persistSession(response.data.data.tokens);
+            set({ user, token: response.data.data.tokens.accessToken, isAuthenticated: true });
             return user;
         } finally {
             set({ isLoading: false });
         }
     },
 
-    // 2. POST http://localhost:8000/auth/api/auth/login
     loginUser: async (payload) => {
         set({ isLoading: true });
         try {
-            const response = await api.post('/auth/api/auth/login', payload);
-            const { user, tokens } = response.data.data;
-            const { accessToken, refreshToken } = tokens;
-
-            Cookies.set('token', accessToken, { expires: 7, path: '/', sameSite: 'lax' });
-            if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-
-            set({ user, token: accessToken, isAuthenticated: true });
+            const response = await api.post<ApiResponse<AuthSession>>('/auth/api/auth/login', payload);
+            const user = normalizeUser(response.data.data.user);
+            persistSession(response.data.data.tokens);
+            set({ user, token: response.data.data.tokens.accessToken, isAuthenticated: true });
             return user;
         } finally {
             set({ isLoading: false });
         }
     },
 
-    // 3. GET http://localhost:8000/auth/api/auth/me
     fetchMe: async () => {
-        const token = Cookies.get('token');
-        if (!token || token === 'undefined') {
-            Cookies.remove('token', { path: '/' });
+        const token = getInitialToken();
+        if (!token) {
+            clearSession();
             set({ user: null, token: null, isAuthenticated: false });
             return null;
         }
 
         set({ isLoading: true });
         try {
-            const response = await api.get('/auth/api/auth/me');
-            const user = response.data.data || response.data.user || response.data;
-            // console.log(user);
-            set({ user, isAuthenticated: true });
+            const response = await api.get<ApiResponse<User>>('/auth/api/auth/me');
+            const user = normalizeUser(response.data.data);
+            set({ user, token, isAuthenticated: true });
             return user;
-        } catch (error) {
+        } catch {
+            clearSession();
             set({ user: null, token: null, isAuthenticated: false });
-            Cookies.remove('token', { path: '/' });
-            localStorage.removeItem('refreshToken');
             return null;
         } finally {
             set({ isLoading: false });
         }
     },
 
-    // 4. POST http://localhost:8000/auth/api/auth/refresh
     refreshToken: async () => {
-        const storedRefreshToken = localStorage.getItem('refreshToken');
-        const response = await api.post('/auth/api/auth/refresh', { refreshToken: storedRefreshToken });
-        const accessToken = response.data.tokens?.accessToken || response.data.accessToken;
+        const storedRefreshToken = typeof window === 'undefined' ? null : localStorage.getItem('refreshToken');
+        if (!storedRefreshToken) {
+            clearSession();
+            set({ user: null, token: null, isAuthenticated: false });
+            return false;
+        }
 
-        if (accessToken) {
-            Cookies.set('token', accessToken, { expires: 7, path: '/', sameSite: 'lax' });
-            set({ token: accessToken, isAuthenticated: true });
+        try {
+            const response = await api.post<TokenResponse>('/auth/api/auth/refresh', { refreshToken: storedRefreshToken });
+            persistSession(response.data.tokens);
+            set({ token: response.data.tokens.accessToken, isAuthenticated: true });
+            return true;
+        } catch {
+            clearSession();
+            set({ user: null, token: null, isAuthenticated: false });
+            return false;
         }
     },
 
-    // 5. PATCH http://localhost:8000/auth/api/auth/driver/status
-    updateDriverStatus: async (status: DriverStatus) => {
+    updateDriverStatus: async (status) => {
         set({ isLoading: true });
         try {
-            await api.patch('/auth/api/auth/driver/status', { status });
+            const response = await api.patch<DriverStatusResponse>('/auth/api/auth/driver/status', {
+                isOnline: status === 'ONLINE',
+                isBusy: status === 'BUSY',
+            });
+            const driverProfile = response.data.data;
             set((state) => ({
-                user: state.user ? { ...state.user, driverStatus: status } : null,
+                user: state.user
+                    ? normalizeUser({ ...state.user, driverProfile })
+                    : state.user,
             }));
         } finally {
             set({ isLoading: false });
         }
     },
 
-    // 6. POST http://localhost:8000/auth/api/auth/logout
     logoutUser: async () => {
         set({ isLoading: true });
         try {
             await api.post('/auth/api/auth/logout');
-        } catch (error) {
-            console.error('Logout error:', error);
+        } catch {
+            // Local cleanup still protects the client after a network failure.
         } finally {
-            Cookies.remove('token', { path: '/' });
-            localStorage.removeItem('refreshToken');
+            clearSession();
             set({ user: null, token: null, isAuthenticated: false, isLoading: false });
         }
     },

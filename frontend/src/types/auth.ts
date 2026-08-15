@@ -2,12 +2,23 @@ export type UserRole = 'RIDER' | 'DRIVER';
 export type DriverStatus = 'ONLINE' | 'OFFLINE' | 'BUSY';
 export type VehicleType = 'BIKE' | 'MINI' | 'COMFORT';
 
+export interface DriverProfile {
+    id: string;
+    vehicleType: VehicleType;
+    vehicleNumber: string;
+    licenseNumber: string;
+    isOnline: boolean;
+    isBusy: boolean;
+    rating: number;
+}
+
 export interface User {
     id: string;
     fullName: string;
     email: string;
-    phone: string;
+    phone?: string;
     role: UserRole;
+    driverProfile?: DriverProfile | null;
     driverStatus?: DriverStatus;
     vehicleType?: VehicleType;
     vehicleNumber?: string;
@@ -28,4 +39,5 @@ export interface RegisterPayload {
 export interface LoginPayload {
     email: string;
     password: string;
+    role: UserRole;
 }

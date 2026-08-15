@@ -67,7 +67,7 @@ export default function MapView({
     }).addTo(map);
 
     // Zoom control at bottom right - minimal design
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.zoom({ position: 'topright' }).addTo(map);
 
     mapInstanceRef.current = map;
 

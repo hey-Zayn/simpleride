@@ -1,0 +1,5 @@
+{
+  "name": "dev-stack",
+  "description": "Spins up local infrastructure (RabbitMQ, Redis, PostgreSQL) and starts local Docker stack.",
+  "command": "docker compose down && docker compose up --build"
+}

@@ -1,0 +1,211 @@
+# Design Analysis — "Dispatch." Fleet Dashboard
+
+A breakdown of the visual system as if reviewing this in a design-engineering critique: color usage, spacing, card anatomy, buttons, status states, and data-viz treatment.
+
+---
+
+## 1. Color System
+
+### 1.1 Core Palette (from swatch)
+
+| Token                            | Hex       | Role                                                                               |
+| -------------------------------- | --------- | ---------------------------------------------------------------------------------- |
+| `--color-primary` (Amber)        | `#F7B558` | Primary accent — active states, progress, "In Transit" status, key data highlights |
+| `--color-secondary` (Sage Green) | `#A5D48C` | Success / positive accent — "Delivered" status, completed progress                 |
+| `--color-ink` (Near-Black)       | `#363236` | Primary text, icons, dark UI elements, active nav button                           |
+| `--color-white`                  | `#FFFFFF` | Card surfaces, base background                                                     |
+
+This is a **warm-neutral + dual-accent** system — one accent (amber) carries "in-progress / active" meaning, the other (green) carries "success / complete" meaning. No blue is used as a primary brand color, which is deliberate — it keeps the brand feeling warm and product-y rather than generic SaaS-blue.
+
+### 1.2 Extended / Semantic Colors (inferred from usage)
+
+These aren't in the swatch but are clearly present in the UI and form a functional status system:
+
+| Status     | Color family                            | Where used                                                                 |
+| ---------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| Loading    | Coral / Red-pink (~`#E8837A`–`#E58C8C`) | Performance overview chart segment (12%)                                   |
+| In Transit | Amber `#F7B558`                         | Chart segment (57%), status pill background, progress ring, map route line |
+| Unloading  | Muted Blue (~`#6FA8DC`–`#8CB4E0`)       | Chart segment (21%)                                                        |
+| Delivered  | Sage Green `#A5D48C`                    | Chart segment (10%), delivery trend sparkline                              |
+
+**Pattern:** each status gets a distinct hue, but all are _desaturated/muted_ versions rather than saturated flat-UI colors — this keeps the dashboard calm and legible against a busy map background instead of looking like a traffic-light warning system.
+
+### 1.3 Background Colors
+
+- **Page/app background:** light neutral gray (~`#EDEDED`–`#F2F2F2`), used as the canvas the map and floating cards sit on.
+- **Map background:** desaturated, low-contrast gray-blue map tiles (roads, water, parks all pulled toward gray) — this is intentional: the map is deliberately muted so it doesn't compete with the amber route line, markers, or floating white cards. Water reads as a slightly cooler light gray-blue; parks/green space as a very light sage tint (a subtle nod to the secondary green).
+- **Card surface:** pure or near-pure white (`#FFFFFF`), sitting on top of both the map and the gray page background with a soft drop shadow to create elevation/depth (a light "floating glass panel" feel, not true glassmorphism/blur).
+- **Status pill background:** each status color is used at ~15–20% opacity as a tint behind the pill, with the full-saturation color used only for the dot/text (e.g., "In Transit" pill = pale amber background + amber text/dot).
+
+### 1.4 Border Colors
+
+- Card borders are **near-invisible** — either no stroke at all or a hairline `#EAEAEA`-ish divider, with elevation communicated almost entirely through **shadow**, not border.
+- Internal dividers (e.g., between stat cards in a row) use a very light gray 1px line — low contrast, purely structural, not decorative.
+- The map "selected marker" gets a **dashed ring border** in amber around the pin — this is the one place a border is used expressively rather than structurally, to draw the eye to the active/selected shipment.
+
+### 1.5 Text Colors
+
+| Level               | Color                   | Usage                                                                                                  |
+| ------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| Primary text        | `#363236` (ink)         | Headlines, big stat numbers (482, 127, 58%, 80%), card titles                                          |
+| Secondary text      | Mid-gray (~`#8A8A8E`)   | Labels above numbers ("Active shipments," "Battery," "Cargo Load"), addresses, timestamps              |
+| Tertiary/muted text | Light gray (~`#B5B5B8`) | Helper text, sub-labels like ETA units, "Stops Remaining" sub-detail                                   |
+| Accent text         | Amber / Green           | Only used when text doubles as a status indicator (percentage inside progress ring, status pill label) |
+
+Numbers are always the highest-contrast element in a card — the design treats **big bold dark numerals** as the primary visual anchor of every stat card, with everything else (label, icon, mini-chart) subordinate to it.
+
+---
+
+## 2. Typography
+
+- A clean, grotesk-style sans-serif (similar in spirit to Inter / General Sans / Satoshi) — no serif, no rounded/geometric novelty font.
+- Clear **two-tier hierarchy** per card: small uppercase-or-sentence-case gray label on top, large bold dark number/value below.
+- Header wordmark ("Dispatch.") uses a heavier weight with a trailing period as a logotype flourish — a small but deliberate branding detail.
+- Numbers are tabular/mono-ish in spacing so stat values (58%, 80%, 482, 127) align cleanly.
+- No more than 2 font weights appear to be in play: a regular weight for labels/body and a bold/semibold for values and headings.
+
+---
+
+## 3. Spacing & Layout
+
+- **Base spacing unit** appears to be an 8px grid (8 / 12 / 16 / 24 / 32).
+- Card internal padding: generous, roughly **16–20px**, giving numbers and icons room to breathe rather than feeling cramped — appropriate for a data-dense dashboard.
+- Gaps between sibling cards in the bottom panel: consistent **~12–16px gutters**.
+- The floating info card on the map has **more padding + more shadow depth** than the stat cards below it, visually signaling "this is a temporary overlay / popover" vs. "this is a permanent dashboard module."
+- Bottom panel is organized as a **responsive card grid**, not a rigid table — cards vary in width based on content weight (the truck/shipment card is widest, individual stat tiles are narrow and uniform).
+
+---
+
+## 4. Card & Container Design Patterns
+
+Three distinct card archetypes are used, each with its own visual weight:
+
+1. **Overlay/Popover Card** (map shipment tooltip)
+   - Strongest shadow, white background, rounded corners, small progress ring badge floating half-outside the card edge (top-right) — a common pattern to let a status indicator "break the frame" and draw attention.
+   - Contains: ID + address, connected "Next stop" list with small dot connectors mimicking a mini route/timeline (like a vertical stepper).
+
+2. **Stat Tile** (Battery, Cargo Load, Active shipments, Delivered today)
+   - Label (gray) → big value (dark, bold) → optional mini visualization (arc gauge, sparkline, tiny bar histogram).
+   - Icon in the top-right corner (outbound-link/arrow icon) suggesting the tile is tappable/expandable.
+   - Very consistent internal layout across all tiles — same anchor points for label, value, and mini-chart regardless of content, which is what makes the grid feel systemized rather than ad hoc.
+
+3. **Feature Card** (vehicle/shipment detail with truck image)
+   - Largest card, combines a status pill, product photography (the truck), route text, and a driver mini-profile (avatar + name) — this is the "hero" card of the bottom panel and anchors the eye first.
+
+**Corner radius pattern:** all cards use a soft, moderately large radius (roughly in the `rounded-xl` / `rounded-2xl` range, ~16–20px), and pills/badges are fully rounded (`rounded-full`). Nothing in this design uses sharp or minimal corners — it leans soft/friendly rather than technical/sharp.
+
+**Shadow pattern:** soft, diffused, low-opacity drop shadows (large blur radius, low spread, low opacity ~5–10% black) — never a hard/crisp shadow. This is what gives the "floating card over a map" depth without looking heavy.
+
+---
+
+## 5. Buttons & Interactive Elements
+
+- **Header nav buttons:** circular icon buttons in a horizontal pill/segmented group.
+  - Active/selected state: filled dark (`#363236`) background with white icon — high contrast, clearly "current view."
+  - Inactive state: white/very-light background with dark-gray icon, no border, sitting inside a shared light-gray pill container that visually groups the whole nav segment.
+- **Notification bell:** icon-only button in a white circular chip, dark icon — same inactive-state treatment as nav icons, consistent language.
+- **Avatar/profile:** circular photo, no border, top-right corner — standard placement.
+- **Expand/detail icons** (small arrow-out glyph in stat tile corners): dark ink color, no background, minimal footprint — a quiet affordance rather than a loud CTA.
+- **Primary CTA color implication:** although no large "Book/Confirm" button appears in these screens, based on the palette, amber (`#F7B558`) is clearly reserved as _the_ primary action/emphasis color, with dark ink (`#363236`) as the alternate high-contrast/"selected" button treatment. Green stays reserved for success/positive states rather than actions.
+
+---
+
+## 6. Status Badges / Chips
+
+- Pill-shaped, fully rounded, small dot indicator + label text (e.g., "In Transit").
+- Background = accent color at low opacity (tint), text/dot = full accent color. This is the same tint-token pattern used across the whole system (progress rings, chart legend, badges) — a strong sign of a defined design-token system rather than one-off styling.
+
+---
+
+## 7. Data Visualization Patterns
+
+- **Circular progress ring** (battery/route-completion %): thin stroke, rounded line-caps, single accent color, percentage centered inside in bold ink text. Used both on the map overlay card (69%) and could generalize to any single-metric completion state.
+- **Arc/gauge mini-charts** inside stat tiles (Battery, Cargo Load): a quarter/half-arc gauge with a gradient or flat fill matching the metric's semantic color (amber for battery, green for cargo load) — reinforces color-coding at a glance without needing to read the label.
+- **Sparkline** (Delivered today): a minimal single-line trend chart, no axis, no gridlines, just a smooth path — decorative-but-informative, communicating trend direction rather than precise values.
+- **Horizontal segmented bar** (Status Performance Overview): a single stacked bar split into 4 colored segments (Loading/In Transit/Unloading/Delivered) with percentage + colored dot legend underneath — an efficient way to show categorical proportion breakdown in very little vertical space.
+- **Route line on map:** solid amber line, distinct from the muted map basemap — same "amber = active/in-progress" logic applied spatially.
+
+**Overall data-viz principle:** every chart type reuses the _same 4-color status vocabulary_ (amber/green/coral/blue) rather than introducing new chart-specific colors. This is a strong, disciplined pattern — the color language stays consistent whether it's shown as a badge, a bar segment, a gauge, or a map line.
+
+---
+
+## 8. Iconography & Map Markers
+
+- Line-style icons throughout (not filled/solid), consistent stroke width, dark ink color by default.
+- Map pins/markers use two states:
+  - **Default marker:** small dark circular badge with a white icon (warehouse/hub-style glyphs) — low visual weight, background noise on the map.
+  - **Active/selected marker:** larger, white circle with amber truck icon, surrounded by a dashed amber ring — clearly the focal point, using scale + color + motion-implying dashed stroke to separate it from the ~8 other dormant pins.
+- This creates a clear **visual hierarchy on the map**: dormant/background markers are small and monochrome dark; the one thing the user should look at is large, colored, and animated-looking.
+
+---
+
+## 9. Design Principles Summary
+
+1. **Color is semantic, not decorative.** Amber = active/in-progress, green = success/complete, coral = early-stage/waiting, blue = intermediate stage. The same four map onto badges, charts, gauges, and the map route — a real token system, not ad hoc styling per component.
+2. **Elevation via shadow, not border.** Borders are nearly absent; depth and grouping are communicated through soft, diffused shadows on white cards floating over a muted background.
+3. **Numbers are the hero.** Every stat tile is built around one large bold dark number, with everything else (label, icon, chart) reduced in visual weight to support it.
+4. **The map recedes, the UI advances.** Desaturating the basemap so the white cards, amber route line, and accent colors pop is the single biggest driver of this dashboard feeling clean instead of cluttered.
+5. **Consistent soft geometry.** Large rounded corners on cards, fully rounded pills/buttons/markers — a warm, friendly, approachable geometry rather than sharp/technical.
+6. **Tint-and-tone, not flat saturation.** Status colors are used at two intensities everywhere — a light tint for backgrounds/fills, full saturation reserved for text/dots/strokes — keeping the whole UI calm rather than alarm-colored.
+
+---
+
+## 10. Suggested Design Tokens (CSS variables)
+
+```css
+:root {
+  /* Brand */
+  --color-primary: #f7b558; /* amber — active/in-progress */
+  --color-secondary: #a5d48c; /* sage green — success/delivered */
+  --color-ink: #363236; /* primary text, dark buttons */
+  --color-white: #ffffff;
+
+  /* Status extended */
+  --color-status-loading: #e8837a; /* coral */
+  --color-status-transit: #f7b558; /* amber */
+  --color-status-unloading: #7fa8d9; /* muted blue */
+  --color-status-delivered: #a5d48c; /* sage green */
+
+  /* Backgrounds */
+  --bg-app: #f2f2f2;
+  --bg-card: #ffffff;
+  --bg-map-muted: #e7e8e6;
+
+  /* Text */
+  --text-primary: #363236;
+  --text-secondary: #8a8a8e;
+  --text-tertiary: #b5b5b8;
+
+  /* Borders / dividers */
+  --border-hairline: #eaeaea;
+
+  /* Radius */
+  --radius-card: 20px;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+```
+
+---
+
+## 11. Quick Reference Table
+
+| Element                                   | Color                       | Notes                                 |
+| ----------------------------------------- | --------------------------- | ------------------------------------- |
+| Page background                           | `#F2F2F2` (approx.)         | Neutral canvas                        |
+| Card background                           | `#FFFFFF`                   | Elevated via shadow, not border       |
+| Card border                               | None / `#EAEAEA` hairline   | Minimal                               |
+| Primary accent (buttons, active/progress) | `#F7B558`                   | Amber                                 |
+| Secondary accent (success/complete)       | `#A5D48C`                   | Sage green                            |
+| Dark/active button fill                   | `#363236`                   | Ink                                   |
+| Primary text                              | `#363236`                   | Big numbers, headings                 |
+| Secondary text                            | ~`#8A8A8E`                  | Labels                                |
+| Tertiary text                             | ~`#B5B5B8`                  | Sub-labels, helper text               |
+| Loading status                            | Coral (~`#E8837A`)          | Chart + legend only                   |
+| Unloading status                          | Muted blue (~`#7FA8D9`)     | Chart + legend only                   |
+| Card radius                               | ~16–20px                    | `rounded-xl`/`rounded-2xl` equivalent |
+| Pill/badge radius                         | Full                        | `rounded-full`                        |
+| Shadow style                              | Soft, diffused, low-opacity | No hard shadows                       |

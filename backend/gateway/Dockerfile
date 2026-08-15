@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5000
 
 # Production: start directly (no nodemon)
-CMD ["npm", "start"]
+CMD ["node", "src/index.js"]

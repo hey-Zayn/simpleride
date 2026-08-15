@@ -9,10 +9,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install production dependencies only (fast, deterministic)
-RUN npm ci --omit=dev
+RUN npm ci --include=dev
 
 # Copy source code (exclude node_modules via .dockerignore)
 COPY . .
+
+RUN npx prisma generate && npm prune --omit=dev
 
 EXPOSE 4001
 

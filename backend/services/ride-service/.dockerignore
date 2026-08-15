@@ -4,7 +4,6 @@ npm-debug.log
 # TypeScript
 dist
 # Prisma
-prisma/schema.prisma
 # Environment
 .env
 # Docker

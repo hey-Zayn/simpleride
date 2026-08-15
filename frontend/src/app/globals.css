@@ -157,3 +157,5 @@ body {
     @apply font-sans;
   }
 }
+/* Keep Leaflet zoom controls clear of the mobile driver header. */
+.leaflet-top.leaflet-right { top: max(5.5rem, calc(env(safe-area-inset-top) + 4.5rem)); }
