@@ -54,3 +54,9 @@ docker-compose.override.yml
 
 fixed_bugs.md
 socket.md
+GCP.md
+SD.md
+
+/Doc
+/deployment
+deploy.md

@@ -57,6 +57,11 @@ export default function DriverDashboard() {
     toast.info('Ride request declined.');
   };
 
+  const handleCounterOffer = (req: RideRequest, counterFare: number) => {
+    setActiveRequest(null);
+    toast.success(`Counter offer of PKR ${counterFare.toLocaleString()} sent to ${req.passengerName ?? 'the rider'}.`);
+  };
+
   // Determine pickup/dropoff coordinates to pass into the existing RideMap
   // Note: Replace hardcoded fallback coordinates with your geocoded coords from request payload if available
   const pickupCoords = activeRequest || acceptedRide 
@@ -160,6 +165,7 @@ export default function DriverDashboard() {
               request={activeRequest}
               onAccept={handleAcceptRequest}
               onDecline={handleDeclineRequest}
+              onCounterOffer={handleCounterOffer}
             />
           </div>
         )}
