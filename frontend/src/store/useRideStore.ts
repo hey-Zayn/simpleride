@@ -99,6 +99,7 @@ export interface Ride {
     status: RideStatus;
     fare: number;
     offeredFare: number;
+    finalFare?: number;
     distanceKm: number;
     durationMins: number;
     otp: string | null;
