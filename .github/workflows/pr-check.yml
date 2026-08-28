@@ -1,0 +1,83 @@
+# ============================================================
+# PR VALIDATION WORKFLOW — Build & Test Only
+# ============================================================
+# WHAT THIS DOES:
+#   1. Runs on Pull Requests to main
+#   2. Validates Docker image builds without pushing to Docker Hub
+#   3. Ensures broken code/dependencies do not get merged to main
+# ============================================================
+
+name: Pull Request Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  detect-changes:
+    name: 🔍 Detect Changes in PR
+    runs-on: ubuntu-latest
+    outputs:
+      gateway: ${{ steps.changes.outputs.gateway }}
+      auth: ${{ steps.changes.outputs.auth }}
+      location: ${{ steps.changes.outputs.location }}
+      notification: ${{ steps.changes.outputs.notification }}
+      ride: ${{ steps.changes.outputs.ride }}
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+
+      - name: Check changed paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            gateway:
+              - 'backend/gateway/**'
+            auth:
+              - 'backend/services/auth-service/**'
+            location:
+              - 'backend/services/location-service/**'
+            notification:
+              - 'backend/services/notification-service/**'
+            ride:
+              - 'backend/services/ride-service/**'
+
+  verify-builds:
+    name: 🧪 Test Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    strategy:
+      matrix:
+        include:
+          - service: gateway
+            context: ./backend/gateway
+            filter_key: gateway
+          - service: auth-service
+            context: ./backend/services/auth-service
+            filter_key: auth
+          - service: location-service
+            context: ./backend/services/location-service
+            filter_key: location
+          - service: notification-service
+            context: ./backend/services/notification-service
+            filter_key: notification
+          - service: ride-service
+            context: ./backend/services/ride-service
+            filter_key: ride
+    if: needs.detect-changes.outputs[matrix.filter_key] == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Note: push is set to false because this is just a PR test check
+      - name: Test Build (dry-run)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: false
+          cache-from: type=gha
