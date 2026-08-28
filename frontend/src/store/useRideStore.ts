@@ -73,11 +73,14 @@ export interface CreateRidePayload {
     offeredFare: number;
     distanceKm: number;
     durationMins: number;
+    passengerName?: string;
 }
 
 export interface Ride {
     id: string;
     riderId: string;
+    passengerName?: string;
+    passengerRating?: number;
     driverId: string | null;
     driver?: {
         name?: string;

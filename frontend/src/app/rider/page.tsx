@@ -142,7 +142,7 @@ export default function RidePage() {
               key={bid.bidId}
               driverName={bid.driverName || 'Driver'}
               rating={bid.driverRating || 4.9}
-              vehicle="Standard Ride"
+              vehicle={bid.vehicleType || currentRide?.vehicleType || 'MINI'}
               offeredFare={bid.counterFare}
               durationMins={3}
               onAccept={() => handleAcceptBid(bid.bidId)}

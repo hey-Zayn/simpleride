@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Star, Check, X, Car } from 'lucide-react';
+import { Star, Check, X, Car, Bike, Sparkles, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface DriverOfferProps {
   driverName: string;
@@ -39,68 +42,120 @@ export default function DriverOfferToast({
 
   const progressPercentage = (timeLeft / 25) * 100;
 
+  const initials = (driverName || 'Driver')
+    .split(' ')
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  const normalizedVehicle = vehicle.toUpperCase();
+  const VehicleIcon =
+    normalizedVehicle.includes('BIKE')
+      ? Bike
+      : normalizedVehicle.includes('COMFORT')
+      ? Sparkles
+      : Car;
+
+  const vehicleLabel =
+    normalizedVehicle === 'BIKE'
+      ? 'Bike Ride'
+      : normalizedVehicle === 'COMFORT'
+      ? 'Comfort Car'
+      : normalizedVehicle === 'MINI'
+      ? 'Mini Car'
+      : vehicle;
+
   return (
-    <div className="w-full bg-[#141414] text-white p-4 rounded-xl shadow-2xl border border-white/15 animate-in fade-in slide-in-from-top-4 duration-300 font-sans pointer-events-auto">
+    <aside
+      className="w-full max-w-sm overflow-hidden rounded-md border border-border/80 bg-zinc-950/95 text-white shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto"
+      aria-live="assertive"
+    >
       {/* Top Countdown Bar */}
-      <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden mb-3">
+      <div className="h-1.5 w-full bg-zinc-800">
         <div
-          className="bg-[#F47920] h-full transition-all duration-1000 ease-linear"
+          className="h-full bg-[#C1F11D] transition-[width] duration-1000 ease-linear shadow-[0_0_8px_#C1F11D]"
           style={{ width: `${progressPercentage}%` }}
         />
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F47920] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#F47920]"></span>
-          </span>
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#F47920]">
-            Driver Counter Offer
-          </p>
+      <div className="space-y-3.5 p-4">
+        {/* Header Badge & Timer */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C1F11D] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#C1F11D]"></span>
+            </span>
+            <p className="font-display text-[11px] font-extrabold uppercase tracking-wider text-[#C1F11D]">
+              Driver Counter Offer
+            </p>
+          </div>
+
+          <Badge
+            variant="outline"
+            className="rounded-sm border-zinc-800 bg-zinc-900 px-2 py-0.5 font-display text-[10px] font-medium text-zinc-300"
+          >
+            <Clock className="mr-1 size-3 text-[#C1F11D]" />
+            {timeLeft}s
+          </Badge>
         </div>
 
-        <span className="text-[10px] font-mono font-bold text-gray-400 bg-white/10 px-2 py-0.5 rounded-full">
-          {timeLeft}s
-        </span>
-      </div>
+        {/* Driver & Offer Details Card */}
+        <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/70 p-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="size-10 rounded-md border border-[#C1F11D]/30 ring-2 ring-[#C1F11D]/20">
+              <AvatarFallback className="rounded-md bg-[#C1F11D]/15 font-display text-sm font-bold text-[#C1F11D]">
+                {initials || 'DR'}
+              </AvatarFallback>
+            </Avatar>
 
-      <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/10 mb-3">
-        <div className="space-y-0.5">
-          <h4 className="text-sm font-bold text-white tracking-tight">{driverName}</h4>
-          <p className="text-xs text-gray-400 flex items-center gap-1">
-            <Car className="w-3.5 h-3.5 text-[#F47920]" />
-            <span>{vehicle}</span>
-          </p>
-          <div className="flex items-center gap-1 text-xs text-amber-400 font-semibold pt-0.5">
-            <Star className="w-3 h-3 fill-amber-400" />
-            <span>{(rating || 4.9).toFixed(1)}</span>
-            <span className="text-gray-400 font-normal">• ~{durationMins} mins away</span>
+            <div className="space-y-0.5">
+              <h4 className="font-display text-sm font-bold text-white tracking-tight">
+                {driverName || 'Driver'}
+              </h4>
+              <p className="flex items-center gap-1.5 font-display text-xs text-zinc-300">
+                <VehicleIcon className="size-3.5 text-[#C1F11D]" />
+                <span className="font-medium">{vehicleLabel}</span>
+              </p>
+              <div className="flex items-center gap-1 font-display text-xs text-zinc-400">
+                <Star className="size-3 fill-[#C1F11D] text-[#C1F11D]" />
+                <span className="font-semibold text-zinc-200">
+                  {(rating || 4.9).toFixed(1)}
+                </span>
+                <span>· ~{durationMins || 3} mins away</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <span className="block font-display text-[10px] font-bold uppercase tracking-wider text-[#C1F11D]/80">
+              Counter Fare
+            </span>
+            <p className="font-display text-lg font-extrabold text-[#C1F11D] tabular-nums tracking-tight">
+              PKR {offeredFare.toLocaleString()}
+            </p>
           </div>
         </div>
 
-        <div className="text-right">
-          <span className="text-[10px] uppercase font-bold text-gray-400 block">Counter Fare</span>
-          <p className="text-lg font-mono font-black text-[#F47920]">PKR {offeredFare.toLocaleString()}</p>
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            className="min-h-10 rounded-md border-zinc-800 bg-zinc-900/80 font-display font-medium text-zinc-300 hover:border-red-500/30 hover:bg-red-500/15 hover:text-red-400"
+            onClick={onDecline}
+          >
+            <X className="mr-1.5 size-4" /> Decline
+          </Button>
+          <Button
+            className="min-h-10 rounded-md bg-[#C1F11D] font-display font-bold text-black shadow-[0_0_12px_rgba(193,241,29,0.35)] hover:bg-[#b0dc17] hover:scale-[1.02] transition-transform"
+            onClick={onAccept}
+          >
+            <Check className="mr-1.5 size-4 stroke-[2.5]" /> Accept Offer
+          </Button>
         </div>
       </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onDecline}
-          className="flex-1 py-2 bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-colors border border-white/10"
-        >
-          <X className="w-3.5 h-3.5" /> Decline
-        </button>
-        <button
-          type="button"
-          onClick={onAccept}
-          className="flex-1 py-2 bg-[#F47920] hover:bg-[#e06810] text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-colors shadow-lg shadow-[#F47920]/20"
-        >
-          <Check className="w-3.5 h-3.5" /> Accept Offer
-        </button>
-      </div>
-    </div>
+    </aside>
   );
-}
+}

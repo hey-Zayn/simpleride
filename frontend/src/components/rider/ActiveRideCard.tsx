@@ -39,7 +39,7 @@ export default function ActiveRideCard() {
     searching: '#8A8A8A',
     accepted: '#2F6FED',
     arrived: '#B8860B',
-    in_progress: '#F47920',
+    in_progress: '#C1F11D',
     completed: '#1F9D55',
     cancelled: '#E3413F',
     expired: '#8A8A8A',

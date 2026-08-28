@@ -1,81 +1,63 @@
-// src/services/socket.service.js
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 import jwt from 'jsonwebtoken';
 import { updateDriverLocation } from './location.service.js';
+import { createRedisClient } from '../config/redis.js';
+import { corsOptions } from '../config/cors.js';
 
 let io = null;
+let pubClient = null;
+let subClient = null;
 
 export const initSocket = (server) => {
     io = new Server(server, {
-        cors: {
-            origin: '*',
-            methods: ['GET', 'POST'],
-        },
+        path: process.env.LOCATION_SOCKET_PATH || '/socket.io',
+        cors: corsOptions,
+        transports: ['websocket', 'polling'],
     });
+    pubClient = createRedisClient();
+    subClient = pubClient.duplicate();
+    io.adapter(createAdapter(pubClient, subClient));
 
-    // Socket Authentication Middleware
     io.use((socket, next) => {
         const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
-
-        if (!token) {
-            return next(new Error('Authentication token missing'));
-        }
-
+        if (!token) return next(new Error('Authentication token missing'));
         try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
-            socket.user = decoded; // Contains { id, role, email }
-            next();
-        } catch (err) {
-            next(new Error('Invalid or expired token'));
+            socket.user = jwt.verify(token, process.env.JWT_SECRET);
+            return next();
+        } catch {
+            return next(new Error('Invalid or expired token'));
         }
     });
 
     io.on('connection', (socket) => {
-        console.log(`[SOCKET CONNECTED] User ID: ${socket.user.id} | Role: ${socket.user.role} | Socket ID: ${socket.id}`);
-
-        // Rider or Family Member joins trip room for tracking
+        console.log(`[SOCKET CONNECTED] User ID: ${socket.user.id} | Socket ID: ${socket.id}`);
         socket.on('join_ride_room', ({ rideId }) => {
+            if (!rideId) return;
             const roomName = `ride_${rideId}`;
             socket.join(roomName);
-            console.log(`User ${socket.user.id} joined room: ${roomName}`);
             socket.emit('room_joined', { success: true, room: roomName });
         });
-
-        // Driver streams live location
-        socket.on('update_location', async (data) => {
+        socket.on('update_location', async ({ lat, lng, rideId }) => {
             try {
-                const { lat, lng, rideId } = data;
-                if (lat === undefined || lng === undefined) return;
-
-                // 1. Save/Refresh location in Redis (Resets 5-minute TTL)
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
                 await updateDriverLocation(socket.user.id, lat, lng);
-
-                // 2. If driver is on an active ride, broadcast coordinates to ride room (Rider/Family)
                 if (rideId) {
                     io.to(`ride_${rideId}`).emit('driver_location_updated', {
-                        driverId: socket.user.id,
-                        lat,
-                        lng,
-                        timestamp: new Date().toISOString(),
+                        driverId: socket.user.id, lat, lng, timestamp: new Date().toISOString(),
                     });
                 }
             } catch (error) {
                 console.error('Socket location update error:', error.message);
             }
         });
-
-        // Handle Disconnect
-        socket.on('disconnect', () => {
-            console.log(`[SOCKET DISCONNECTED] Socket ID: ${socket.id}`);
-        });
     });
-
     return io;
 };
 
-export const getIO = () => {
-    if (!io) {
-        throw new Error('Socket.io not initialized!');
-    }
-    return io;
+export const closeSocket = async () => {
+    if (io) await new Promise((resolve) => io.close(resolve));
+    if (pubClient && pubClient.status !== 'end') await pubClient.quit();
+    if (subClient && subClient.status !== 'end') await subClient.quit();
 };
+export const getIO = () => { if (!io) throw new Error('Socket.io not initialized'); return io; };

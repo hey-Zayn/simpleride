@@ -15,6 +15,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useRideStore } from '@/store/useRideStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import FareSectionSkeleton from '../skeletons/FareSectionSkeleton';
@@ -55,6 +56,7 @@ function RouteEmptyState() {
 }
 
 export default function RideSelector({ onRequestRideSuccess }: RideSelectorProps) {
+  const { user } = useAuthStore();
   const {
     pickup,
     dropoff,
@@ -117,6 +119,7 @@ export default function RideSelector({ onRequestRideSuccess }: RideSelectorProps
       offeredFare: Number(offeredFare),
       distanceKm: Number(distanceKm || 0),
       durationMins: Number(durationMins || 0),
+      passengerName: user?.fullName,
     };
 
     try {

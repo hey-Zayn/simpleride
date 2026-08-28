@@ -1,46 +1,40 @@
-// src/index.js
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import locationRoutes from './routes/location.routes.js';
-import { initRabbitMQConsumer } from './config/rabbitmq.js';
-import { initSocket } from './services/socket.service.js';
-import { startGrpcServer } from './grpc/server.js';
-
+import { initRabbitMQConsumer, closeRabbitMQConsumer } from './config/rabbitmq.js';
+import { initSocket, closeSocket } from './services/socket.service.js';
+import { startGrpcServer, stopGrpcServer } from './grpc/server.js';
+import { closeRedis } from './config/redis.js';
+import { corsOptions } from './config/cors.js';
 
 dotenv.config();
-
 const app = express();
-app.use(cors());
-app.use(express.json());
-
+let isShuttingDown = false;
+app.set('trust proxy', 1);
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '1mb' }));
 app.use('/api/location', locationRoutes);
-
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'UP', service: 'location-service' });
-});
-app.get('/', (req, res) => {
-    res.status(200).json({ success: true, message: '✔ Location service is running' });
-});
-
-// Create HTTP server wrapping express app
+app.get('/', (req, res) => res.status(200).json({ success: true, message: 'Location service is running' }));
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'ok', service: 'location-service' }));
+app.get('/readyz', (req, res) => res.status(isShuttingDown ? 503 : 200).json({ status: isShuttingDown ? 'draining' : 'ready', service: 'location-service' }));
 const server = http.createServer(app);
-
-// Initialize Socket.io
 initSocket(server);
-
-const PORT = process.env.PORT || 4002;
-
+const PORT = Number(process.env.PORT || 4002);
 const startServer = async () => {
     await initRabbitMQConsumer();
     await startGrpcServer();
-    server.listen(PORT, () => {
-        console.log(`Location Service running on http://localhost:${PORT}`);
-        console.log(`WebSockets listening on ws://localhost:${PORT}`);
-    });
+    server.listen(PORT, () => console.log(`Location Service listening on port ${PORT}`));
 };
-
-
-
-startServer();
+startServer().catch((error) => { console.error('Location service failed to start:', error); process.exit(1); });
+const shutdown = async (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`Received ${signal}; draining location service.`);
+    await closeSocket();
+    server.close(async () => { await Promise.allSettled([closeRabbitMQConsumer(), closeRedis(), stopGrpcServer()]); process.exit(0); });
+    setTimeout(() => process.exit(1), Number(process.env.SHUTDOWN_TIMEOUT_MS || 55000)).unref();
+};
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));

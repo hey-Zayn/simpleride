@@ -12,7 +12,7 @@ export const estimate = async (req, res) => {
 
 export const createRide = async (req, res) => {
     try {
-        const ride = await rideService.createRideRequest(req.user.id, req.body);
+        const ride = await rideService.createRideRequest(req.user.id, req.body, req.user?.fullName);
         res.status(201).json({ success: true, message: 'Ride requested with bid', data: ride });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -30,8 +30,14 @@ export const acceptRideBid = async (req, res) => {
 
 export const submitDriverCounterBid = async (req, res) => {
     try {
-        const { counterFare } = req.body;
-        const bid = await rideService.driverCounterBid(req.params.id, req.user.id, counterFare);
+        const { counterFare, vehicleType, driverName } = req.body;
+        const bid = await rideService.driverCounterBid(
+            req.params.id,
+            req.user.id,
+            counterFare,
+            driverName || req.user?.fullName,
+            vehicleType
+        );
         res.status(201).json({ success: true, message: 'Counter bid sent to rider', data: bid });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });

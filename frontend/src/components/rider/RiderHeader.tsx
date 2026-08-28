@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Bell, User, LogOut, History, CreditCard } from 'lucide-react';
 import {
   Avatar,
@@ -46,14 +47,14 @@ export default function RiderHeader({
     <header className="fixed top-5 left-0 right-0 z-50 px-6 pointer-events-none">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Brand Logo */}
-        <div className="pointer-events-auto flex items-center gap-2.5 bg-white/80 backdrop-blur-md px-3.5 py-1.5 rounded-sm border border-black/5 shadow-xs transition-opacity hover:opacity-90">
+        <Link href="/rider" className="pointer-events-auto flex items-center gap-2.5 bg-white/80 backdrop-blur-md px-3.5 py-1.5 rounded-sm border border-black/5 shadow-xs transition-opacity hover:opacity-90">
           <div className="w-5 h-5 rounded-sm bg-[#141414] flex items-center justify-center shrink-0">
             <span className="w-1.5 h-1.5 rounded-xs bg-[#C1F11D]" />
           </div>
           <span className="font-display font-bold text-sm tracking-tight text-[#141414]">
             Ryde
           </span>
-        </div>
+        </Link>
 
         {/* Floating Right Bar */}
         <div className="pointer-events-auto flex items-center gap-1 bg-white/80 backdrop-blur-md px-1.5 py-1 rounded-sm border border-black/5 shadow-xs">
@@ -99,22 +100,18 @@ export default function RiderHeader({
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-black/5 my-1" />
               
-              <DropdownMenuItem
-                onClick={onProfileClick}
-                className="text-xs font-medium cursor-pointer rounded-sm px-2 py-1.5 hover:bg-[#C1F11D] focus:bg-[#C1F11D] transition-colors gap-2"
-              >
-                <User className="w-3.5 h-3.5 opacity-70" />
-                Profile
+              <DropdownMenuItem asChild className="text-xs font-medium cursor-pointer rounded-sm px-2 py-1.5 hover:bg-[#C1F11D] focus:bg-[#C1F11D] transition-colors gap-2">
+                <Link href="/rider/profile">
+                  <User className="w-3.5 h-3.5 opacity-70" />
+                  Profile
+                </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem className="text-xs font-medium cursor-pointer rounded-sm px-2 py-1.5 hover:bg-[#C1F11D] focus:bg-[#C1F11D] transition-colors gap-2">
-                <History className="w-3.5 h-3.5 opacity-70" />
-                Trip history
-              </DropdownMenuItem>
-
-              <DropdownMenuItem className="text-xs font-medium cursor-pointer rounded-sm px-2 py-1.5 hover:bg-[#C1F11D] focus:bg-[#C1F11D] transition-colors gap-2">
-                <CreditCard className="w-3.5 h-3.5 opacity-70" />
-                Payments
+              <DropdownMenuItem asChild className="text-xs font-medium cursor-pointer rounded-sm px-2 py-1.5 hover:bg-[#C1F11D] focus:bg-[#C1F11D] transition-colors gap-2">
+                <Link href="/rider/history">
+                  <History className="w-3.5 h-3.5 opacity-70" />
+                  Trip history
+                </Link>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="bg-black/5 my-1" />

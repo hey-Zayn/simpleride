@@ -2,49 +2,13 @@ services:
   nginx:
     image: nginx
     container_name: nginx
+    restart: always
     ports:
       - "8000:80"
-    restart: always
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - gateway
-
-  # mongodb:
-  #   image: mongo
-  #   container_name: mongodb
-  #   restart : always
-  #   ports:
-  #     - "27017:27017"
-  #   volumes:
-  #     - mongo_data:/data/db
-  redis:
-    image: redis
-    container_name: redis
-    restart: always
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   gateway:
     build: ./backend/gateway
@@ -74,9 +38,6 @@ services:
     volumes:
       - ./backend/services/auth-service:/app
       - /app/node_modules
-    depends_on:
-      redis:
-        condition: service_healthy
 
   location-service:
     build: ./backend/services/location-service
@@ -90,11 +51,6 @@ services:
     volumes:
       - ./backend/services/location-service:/app
       - /app/node_modules
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
   notification-service:
     build: ./backend/services/notification-service
@@ -107,9 +63,6 @@ services:
     volumes:
       - ./backend/services/notification-service:/app
       - /app/node_modules
-    depends_on:
-      redis:
-        condition: service_healthy
 
   ride-service:
     build: ./backend/services/ride-service
@@ -122,8 +75,3 @@ services:
     volumes:
       - ./backend/services/ride-service:/app
       - /app/node_modules
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy

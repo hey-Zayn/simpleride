@@ -46,7 +46,7 @@ export const registerUser = async (data) => {
         return user;
     });
 
-    const tokens = generateTokens({ id: result.id, role: result.role, email: result.email });
+    const tokens = generateTokens({ id: result.id, role: result.role, email: result.email, fullName: result.fullName });
     await prisma.user.update({
         where: { id: result.id },
         data: { refreshToken: tokens.refreshToken },
@@ -69,7 +69,7 @@ export const loginUser = async ({ email, password, role }) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new Error('Invalid email or password');
 
-    const tokens = generateTokens({ id: user.id, role: user.role, email: user.email });
+    const tokens = generateTokens({ id: user.id, role: user.role, email: user.email, fullName: user.fullName });
 
     await prisma.user.update({
         where: { id: user.id },
@@ -96,7 +96,7 @@ export const refreshTokenRotation = async (token) => {
         throw new Error('Invalid or revoked refresh token');
     }
 
-    const newTokens = generateTokens({ id: user.id, role: user.role, email: user.email });
+    const newTokens = generateTokens({ id: user.id, role: user.role, email: user.email, fullName: user.fullName });
 
     await prisma.user.update({
         where: { id: user.id },

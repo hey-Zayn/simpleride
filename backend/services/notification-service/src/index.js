@@ -1,41 +1,34 @@
-// src/index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import http from 'http'; // 👈 1. Import http module
+import http from 'http';
 import notificationRoutes from './routes/notification.routes.js';
-import { initRabbitMQConsumer } from './config/rabbitmq.js';
-import { initSocket } from './socket.js'; // 👈 2. Import initSocket
+import { initRabbitMQConsumer, closeRabbitMQConsumer } from './config/rabbitmq.js';
+import { initSocket, closeSocket } from './socket.js';
+import prisma from './config/db.js';
+import { corsOptions } from './config/cors.js';
 
 dotenv.config();
-
 const app = express();
-app.use(cors());
-app.use(express.json());
-
-// 👈 3. Create HTTP server & initialize Socket.io
+let isShuttingDown = false;
+app.set('trust proxy', 1);
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '1mb' }));
 const server = http.createServer(app);
 initSocket(server);
-
 app.use('/api/notifications', notificationRoutes);
-
-app.get('/', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: "✔ Notification service is running"
-    });
-});
-
-const PORT = process.env.PORT || 4003;
-
-const startServer = async () => {
-    // 👈 4. Initialize consumer AFTER Socket.io is initialized
-    await initRabbitMQConsumer();
-
-    // 👈 5. Listen on 'server' instead of 'app'
-    server.listen(PORT, () => {
-        console.log(`Notification Service running on http://localhost:${PORT}`);
-    });
+app.get('/', (req, res) => res.status(200).json({ success: true, message: 'Notification service is running' }));
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'ok', service: 'notification-service' }));
+app.get('/readyz', (req, res) => res.status(isShuttingDown ? 503 : 200).json({ status: isShuttingDown ? 'draining' : 'ready', service: 'notification-service' }));
+const PORT = Number(process.env.PORT || 4003);
+const startServer = async () => { await initRabbitMQConsumer(); server.listen(PORT, () => console.log(`Notification Service listening on port ${PORT}`)); };
+startServer().catch((error) => { console.error('Notification service failed to start:', error); process.exit(1); });
+const shutdown = async (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`Received ${signal}; draining notification service.`);
+    server.close(async () => { await Promise.allSettled([closeRabbitMQConsumer(), closeSocket(), prisma.$disconnect()]); process.exit(0); });
+    setTimeout(() => process.exit(1), Number(process.env.SHUTDOWN_TIMEOUT_MS || 55000)).unref();
 };
-
-startServer();
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));

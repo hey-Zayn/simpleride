@@ -65,7 +65,8 @@ function LoginForm() {
       const user = await loginUser(data);
       const requestedPath = searchParams.get('from');
       const defaultPath = user.role === 'DRIVER' ? '/driver' : '/rider';
-      router.replace(requestedPath ?? defaultPath);
+      const target = requestedPath ?? defaultPath;
+      window.location.href = target;
     } catch (error) {
       const apiError = error as AxiosError<ErrorResponse>;
       setErrorMessage(apiError.response?.data?.message ?? 'We could not sign you in. Check your details and try again.');

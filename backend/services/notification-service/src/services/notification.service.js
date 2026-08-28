@@ -42,8 +42,14 @@ export const handleRideRequested = async (data) => {
             id: data.rideId,
             rideId: data.rideId,
             riderId: data.riderId,
+            passengerName: data.passengerName || data.riderName || 'Rider',
+            passengerRating: data.passengerRating || 4.8,
             pickupAddress,
             dropoffAddress,
+            pickupLat: data.pickup?.lat || data.pickupLat,
+            pickupLng: data.pickup?.lng || data.pickupLng,
+            dropoffLat: data.dropoff?.lat || data.dropoffLat,
+            dropoffLng: data.dropoff?.lng || data.dropoffLng,
             vehicleType,
             offeredFare: data.offeredFare,
             calculatedFare: data.calculatedFare,
@@ -108,8 +114,9 @@ export const handleRideCounterBid = async (data) => {
             rideId: data.rideId,
             driverId: data.driverId,
             counterFare: data.counterFare,
-            driverName: data.driverName || 'Nearby Driver',
+            driverName: data.driverName || 'Driver',
             driverRating: data.driverRating || 4.9,
+            vehicleType: data.vehicleType || 'MINI',
         });
         console.log(`[Notification Service] Emitted 'ride.counter_bid' to user:${data.riderId}`);
     } catch (err) {

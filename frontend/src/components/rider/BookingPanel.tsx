@@ -35,7 +35,7 @@ export default function BookingPanel({
 
   return (
     <div className="w-full overflow-hidden font-sans">
-      <div className="h-[3px] bg-[#F47920] rounded-full" />
+      <div className="h-[3px] bg-[#C1F11D] rounded-full" />
 
       <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-[var(--border-muted)]">
         <h2 className="text-lg font-display font-bold text-[var(--ink)]">Where are you going?</h2>

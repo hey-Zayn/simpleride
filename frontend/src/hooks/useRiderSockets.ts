@@ -9,6 +9,7 @@ export interface DriverCounterBid {
     driverId: string;
     driverName?: string;
     driverRating?: number;
+    vehicleType?: string;
     counterFare: number;
 }
 

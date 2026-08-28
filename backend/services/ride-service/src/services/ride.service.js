@@ -42,7 +42,7 @@ export const estimateRideFare = async (pickup, dropoff) => {
 /**
  * Creates ride request with rider custom bid in PKR and fetches nearby drivers via gRPC.
  */
-export const createRideRequest = async (riderId, rideData) => {
+export const createRideRequest = async (riderId, rideData, riderName = null) => {
     const distanceKm = calculateDistanceInKm(
         rideData.pickupLat,
         rideData.pickupLng,
@@ -98,15 +98,27 @@ export const createRideRequest = async (riderId, rideData) => {
     // Schedule delayed expiration job via BullMQ
     await scheduleBidExpiration(ride.id);
 
+    const passengerName = rideData.passengerName || riderName || 'Rider';
+
     // Publish event for driver dispatch including matched nearby drivers
     await publishEvent('ride.requested', {
         rideId: ride.id,
         riderId: ride.riderId,
+        passengerName,
+        passengerRating: 4.9,
         vehicleType: ride.vehicleType,
         pickup: { lat: ride.pickupLat, lng: ride.pickupLng, address: ride.pickupAddress },
         dropoff: { lat: ride.dropoffLat, lng: ride.dropoffLng, address: ride.dropoffAddress },
+        pickupAddress: ride.pickupAddress,
+        dropoffAddress: ride.dropoffAddress,
+        pickupLat: ride.pickupLat,
+        pickupLng: ride.pickupLng,
+        dropoffLat: ride.dropoffLat,
+        dropoffLng: ride.dropoffLng,
         offeredFare: ride.offeredFare,
         calculatedFare: ride.calculatedFare,
+        distanceKm: ride.distanceKm,
+        durationMins: ride.durationMins,
         nearbyDrivers,
     });
 
@@ -179,7 +191,7 @@ export const acceptRiderBid = async (rideId, driverId) => {
 /**
  * Driver counters the rider's bid with a custom fare offer.
  */
-export const driverCounterBid = async (rideId, driverId, counterFare) => {
+export const driverCounterBid = async (rideId, driverId, counterFare, driverName = null, vehicleType = null) => {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
 
     if (!ride) throw new Error('Ride not found');
@@ -194,11 +206,17 @@ export const driverCounterBid = async (rideId, driverId, counterFare) => {
         },
     });
 
+    const resolvedVehicleType = vehicleType || ride.vehicleType || 'MINI';
+    const resolvedDriverName = driverName || 'Driver';
+
     await publishEvent('ride.counter_bid', {
         bidId: bid.id,
         rideId: ride.id,
         riderId: ride.riderId,
         driverId,
+        driverName: resolvedDriverName,
+        driverRating: 4.9,
+        vehicleType: resolvedVehicleType,
         counterFare,
     });
 

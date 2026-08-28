@@ -1,75 +1,42 @@
-// src/config/rabbitmq.js
 import amqplib from 'amqplib';
-import {
-    handleRideRequested,
-    handleRideAccepted,
-    handleRideCounterBid,
-    handleRideArrived,
-    handleRideInProgress,
-    handleRideCompleted,
-    handleRideCancelled,
-    handleRideExpired,
-} from '../services/notification.service.js';
+import { handleRideRequested, handleRideAccepted, handleRideCounterBid, handleRideArrived, handleRideInProgress, handleRideCompleted, handleRideCancelled, handleRideExpired } from '../services/notification.service.js';
 
+let connection = null;
+let channel = null;
+const exchange = 'ride_events';
+const deadLetterExchange = 'ride_events.dlx';
+const queueName = 'notification_service_queue';
+const handlers = { 'ride.requested': handleRideRequested, 'ride.accepted': handleRideAccepted, 'ride.counter_bid': handleRideCounterBid, 'ride.arrived': handleRideArrived, 'ride.in_progress': handleRideInProgress, 'ride.completed': handleRideCompleted, 'ride.cancelled': handleRideCancelled, 'ride.expired': handleRideExpired };
 export const initRabbitMQConsumer = async () => {
-    const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+    const rabbitUrl = process.env.RABBITMQ_URL;
+    if (!rabbitUrl) throw new Error('RABBITMQ_URL is required');
     try {
-        const connection = await amqplib.connect(rabbitUrl);
-        const channel = await connection.createChannel();
-
-        await channel.assertExchange('ride_events', 'topic', { durable: true });
-        const q = await channel.assertQueue('notification_service_queue', { durable: true });
-
-        // Queue is already bound to 'ride.#', so 'ride.expired' is automatically routed here
-        await channel.bindQueue(q.queue, 'ride_events', 'ride.#');
-
-        console.log('✔ Notification Service listening on RabbitMQ [ride.#]');
-
-        channel.consume(q.queue, async (msg) => {
-            if (msg !== null) {
-                try {
-                    const routingKey = msg.fields.routingKey;
-                    const content = JSON.parse(msg.content.toString());
-
-                    switch (routingKey) {
-                        case 'ride.requested':
-                            await handleRideRequested(content);
-                            break;
-                        case 'ride.accepted':
-                            await handleRideAccepted(content);
-                            break;
-                        case 'ride.counter_bid':
-                            await handleRideCounterBid(content);
-                            break;
-                        case 'ride.arrived':
-                            await handleRideArrived(content);
-                            break;
-                        case 'ride.in_progress':
-                            await handleRideInProgress(content);
-                            break;
-                        case 'ride.completed':
-                            await handleRideCompleted(content);
-                            break;
-                        case 'ride.cancelled':
-                            await handleRideCancelled(content);
-                            break;
-                        case 'ride.expired': // 2. Handle the ride.expired event
-                            await handleRideExpired(content);
-                            break;
-                        default:
-                            console.log(`Unhandled event: ${routingKey}`);
-                    }
-
-                    channel.ack(msg);
-                } catch (err) {
-                    console.error(`[RabbitMQ] Error processing event (${msg.fields.routingKey}):`, err.message);
-                    // Reject message without requeueing to prevent endless crash loops on malformed payloads
-                    channel.nack(msg, false, false);
-                }
+        connection = await amqplib.connect(rabbitUrl);
+        channel = await connection.createChannel();
+        await channel.assertExchange(exchange, 'topic', { durable: true });
+        await channel.assertExchange(deadLetterExchange, 'topic', { durable: true });
+        const queue = await channel.assertQueue(queueName, { durable: true, arguments: { 'x-dead-letter-exchange': deadLetterExchange } });
+        const dlq = await channel.assertQueue(`${queueName}.dlq`, { durable: true });
+        await channel.bindQueue(queue.queue, exchange, 'ride.#');
+        await channel.bindQueue(dlq.queue, deadLetterExchange, '#');
+        await channel.prefetch(Number(process.env.RABBITMQ_PREFETCH || 10));
+        channel.consume(queue.queue, async (msg) => {
+            if (!msg) return;
+            try {
+                const handler = handlers[msg.fields.routingKey];
+                if (handler) await handler(JSON.parse(msg.content.toString()));
+                else console.warn(`Unhandled event: ${msg.fields.routingKey}`);
+                channel.ack(msg);
+            } catch (error) {
+                console.error(`RabbitMQ message failed (${msg.fields.routingKey}):`, error.message);
+                channel.nack(msg, false, false);
             }
         });
+        connection.on('close', () => console.warn('Notification RabbitMQ connection closed'));
     } catch (error) {
-        console.error('RabbitMQ Consumer Error:', error.message);
-        setTimeout(initRabbitMQConsumer, 5000);
+        console.error('Notification RabbitMQ connection error:', error.message);
+        setTimeout(() => initRabbitMQConsumer().catch(() => {}), 5000).unref();
+        throw error;
     }
 };
+export const closeRabbitMQConsumer = async () => { if (channel) await channel.close(); if (connection) await connection.close(); };

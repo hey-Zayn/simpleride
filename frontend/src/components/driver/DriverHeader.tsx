@@ -92,24 +92,23 @@ export default function DriverHeader() {
 
               <DropdownMenuSeparator className="bg-gray-100" />
 
-              <DropdownMenuItem className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-bold font-display cursor-pointer  rounded-sm">
-                <User className="w-4 h-4 text-gray-500" />
-                <span>Profile</span>
+              <DropdownMenuItem asChild className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-bold font-display cursor-pointer rounded-sm">
+                <Link href="/driver/profile">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span>Profile</span>
+                </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-bold font-display cursor-pointer  rounded-sm">
-                <Settings className="w-4 h-4 text-gray-500" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-bold font-display cursor-pointer  rounded-sm">
-                <History className="w-4 h-4 text-gray-500" />
-                <span>Trips / Ride History</span>
+              <DropdownMenuItem asChild className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-bold font-display cursor-pointer rounded-sm">
+                <Link href="/driver/history">
+                  <History className="w-4 h-4 text-gray-500" />
+                  <span>Trips / Ride History</span>
+                </Link>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="bg-gray-100" />
 
-              <DropdownMenuItem onClick={()=>logoutUser()} className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-bold font-display cursor-pointer text-rose-500 hover:bg-rose-800 focus:bg-rose-800 focus:text-white/80 hover:text-white  rounded-sm">
+              <DropdownMenuItem onClick={()=>logoutUser()} className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-bold font-display cursor-pointer text-rose-500 hover:bg-rose-50 focus:bg-rose-50 rounded-sm">
                 <LogOut className="w-4 h-4" />
                 <span>Log Out</span>
               </DropdownMenuItem>

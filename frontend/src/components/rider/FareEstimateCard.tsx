@@ -2,6 +2,7 @@
 
 import { Plus, Minus, ArrowRight, Loader2, Bike, Car, Sparkles, TrendingUp, TrendingDown, Equal, RotateCcw } from 'lucide-react';
 import { useRideStore } from '@/store/useRideStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 import FareEstimateCardSkeleton from '../../components/skeletons/Fareestimatecardskeleton';
 
@@ -25,6 +26,7 @@ function formatPKR(value: number) {
 }
 
 export default function FareEstimateCard({ onRequestRideSuccess }: FareEstimateCardProps) {
+  const { user } = useAuthStore();
   const {
     pickup,
     dropoff,
@@ -84,6 +86,7 @@ export default function FareEstimateCard({ onRequestRideSuccess }: FareEstimateC
       offeredFare: Number(offeredFare),
       distanceKm: Number(distanceKm),
       durationMins: Number(durationMins),
+      passengerName: user?.fullName,
     };
 
     try {
