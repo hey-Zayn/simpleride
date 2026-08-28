@@ -11,12 +11,12 @@
 #   - Every push to the "main" branch
 #
 # REQUIRED GITHUB SECRETS:
-#   DOCKERHUB_USERNAME  — Your Docker Hub username (e.g. heyzayn)
+#   DOCKERHUB_USERNAME  — Your Docker Hub username (heyzayn)
 #   DOCKERHUB_TOKEN     — Docker Hub Access Token
-#   EC2_HOST            — Public/Elastic IP of EC2 (e.g. 35.154.165.80)
+#   EC2_HOST            — Public/Elastic IP of EC2 (35.154.165.80)
 #   EC2_USERNAME        — SSH user (ubuntu)
 #   EC2_SSH_KEY         — RSA Private Key (.pem content)
-#   EC2_APP_PATH        — Directory on EC2 (e.g. /home/ubuntu/app)
+#   EC2_APP_PATH        — Directory on EC2 (/home/ubuntu/app)
 # ============================================================
 
 name: Deploy Backend Services to EC2
@@ -62,25 +62,25 @@ jobs:
 
   # ─── JOB 2: BUILD & PUSH DOCKER IMAGES IN PARALLEL ─────────
   build-and-push:
-    name: 🐳 Build & Push ${{ matrix.service }}
+    name: 🐳 Build & Push ${{ matrix.image_name }}
     runs-on: ubuntu-latest
     needs: detect-changes
     strategy:
       matrix:
         include:
-          - service: gateway
+          - image_name: simpleride-gateway
             context: ./backend/gateway
             filter_key: gateway
-          - service: auth-service
+          - image_name: simpleride-auth
             context: ./backend/services/auth-service
             filter_key: auth
-          - service: location-service
+          - image_name: simpleride-location
             context: ./backend/services/location-service
             filter_key: location
-          - service: notification-service
+          - image_name: simpleride-notification
             context: ./backend/services/notification-service
             filter_key: notification
-          - service: ride-service
+          - image_name: simpleride-ride
             context: ./backend/services/ride-service
             filter_key: ride
 
@@ -106,8 +106,8 @@ jobs:
           context: ${{ matrix.context }}
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image_name }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image_name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -116,8 +116,6 @@ jobs:
     name: 🚀 Deploy to EC2
     runs-on: ubuntu-latest
     needs: [detect-changes, build-and-push]
-    # Runs when build-and-push finishes or was skipped because no services built,
-    # but at least one service was changed and all builds succeeded.
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&

@@ -44,25 +44,25 @@ jobs:
               - 'backend/services/ride-service/**'
 
   verify-builds:
-    name: 🧪 Test Build ${{ matrix.service }}
+    name: 🧪 Test Build ${{ matrix.image_name }}
     runs-on: ubuntu-latest
     needs: detect-changes
     strategy:
       matrix:
         include:
-          - service: gateway
+          - image_name: simpleride-gateway
             context: ./backend/gateway
             filter_key: gateway
-          - service: auth-service
+          - image_name: simpleride-auth
             context: ./backend/services/auth-service
             filter_key: auth
-          - service: location-service
+          - image_name: simpleride-location
             context: ./backend/services/location-service
             filter_key: location
-          - service: notification-service
+          - image_name: simpleride-notification
             context: ./backend/services/notification-service
             filter_key: notification
-          - service: ride-service
+          - image_name: simpleride-ride
             context: ./backend/services/ride-service
             filter_key: ride
     if: needs.detect-changes.outputs[matrix.filter_key] == 'true'
