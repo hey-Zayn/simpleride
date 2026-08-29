@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Loader2 } from 'lucide-react';
+import MobilityLoader from '../components/home/MobilityLoader';
 
 export default function HomePage() {
   const router = useRouter();
@@ -21,14 +21,15 @@ export default function HomePage() {
         router.replace('/rider');
       }
     }
+    // if (isLoading) {
+    //   <MobilityLoader />
+    // }
   }, [user, isAuthenticated, isLoading, router]);
 
   return (
-    <div className="min-h-screen w-full bg-[#141414] flex flex-col items-center justify-center space-y-4">
-      <Loader2 className="w-8 h-8 animate-spin text-[#F47920]" />
-      <p className="text-xs font-mono font-bold text-gray-400 uppercase tracking-widest">
-        Loading Mobility Service...
-      </p>
+    <div className="min-h-screen w-full">
+      <MobilityLoader />
+      loading
     </div>
   );
 }
