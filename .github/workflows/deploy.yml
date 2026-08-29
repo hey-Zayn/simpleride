@@ -24,6 +24,7 @@ name: Deploy Backend Services to EC2
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   # ─── JOB 1: DETECT CHANGED SERVICES ─────────────────────────
@@ -31,12 +32,8 @@ jobs:
     name: 🔍 Detect Changed Services
     runs-on: ubuntu-latest
     outputs:
-      gateway: ${{ steps.changes.outputs.gateway }}
-      auth: ${{ steps.changes.outputs.auth }}
-      location: ${{ steps.changes.outputs.location }}
-      notification: ${{ steps.changes.outputs.notification }}
-      ride: ${{ steps.changes.outputs.ride }}
-      any_changed: ${{ steps.changes.outputs.gateway == 'true' || steps.changes.outputs.auth == 'true' || steps.changes.outputs.location == 'true' || steps.changes.outputs.notification == 'true' || steps.changes.outputs.ride == 'true' }}
+      has_changes: ${{ steps.set-matrix.outputs.has_changes }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
 
     steps:
       - name: Checkout code
@@ -60,32 +57,47 @@ jobs:
             ride:
               - 'backend/services/ride-service/**'
 
+      - name: Generate Dynamic Build Matrix
+        id: set-matrix
+        run: |
+          node -e '
+            const isManual = process.env.EVENT_NAME === "workflow_dispatch";
+            const changes = {
+              gateway: isManual || process.env.GATEWAY === "true",
+              auth: isManual || process.env.AUTH === "true",
+              location: isManual || process.env.LOCATION === "true",
+              notification: isManual || process.env.NOTIFICATION === "true",
+              ride: isManual || process.env.RIDE === "true",
+            };
+            const services = [
+              { image_name: "simpleride-gateway", context: "./backend/gateway", filter_key: "gateway" },
+              { image_name: "simpleride-auth", context: "./backend/services/auth-service", filter_key: "auth" },
+              { image_name: "simpleride-location", context: "./backend/services/location-service", filter_key: "location" },
+              { image_name: "simpleride-notification", context: "./backend/services/notification-service", filter_key: "notification" },
+              { image_name: "simpleride-ride", context: "./backend/services/ride-service", filter_key: "ride" },
+            ];
+            const matrix = services.filter(s => changes[s.filter_key]);
+            const fs = require("fs");
+            const output = process.env.GITHUB_OUTPUT;
+            fs.appendFileSync(output, `has_changes=${matrix.length > 0}\n`);
+            fs.appendFileSync(output, `matrix=${JSON.stringify({ include: matrix })}\n`);
+          '
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GATEWAY: ${{ steps.changes.outputs.gateway }}
+          AUTH: ${{ steps.changes.outputs.auth }}
+          LOCATION: ${{ steps.changes.outputs.location }}
+          NOTIFICATION: ${{ steps.changes.outputs.notification }}
+          RIDE: ${{ steps.changes.outputs.ride }}
+
   # ─── JOB 2: BUILD & PUSH DOCKER IMAGES IN PARALLEL ─────────
   build-and-push:
     name: 🐳 Build & Push ${{ matrix.image_name }}
     runs-on: ubuntu-latest
     needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
     strategy:
-      matrix:
-        include:
-          - image_name: simpleride-gateway
-            context: ./backend/gateway
-            filter_key: gateway
-          - image_name: simpleride-auth
-            context: ./backend/services/auth-service
-            filter_key: auth
-          - image_name: simpleride-location
-            context: ./backend/services/location-service
-            filter_key: location
-          - image_name: simpleride-notification
-            context: ./backend/services/notification-service
-            filter_key: notification
-          - image_name: simpleride-ride
-            context: ./backend/services/ride-service
-            filter_key: ride
-
-    # Only run the build job if files in this specific service changed
-    if: needs.detect-changes.outputs[matrix.filter_key] == 'true'
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
 
     steps:
       - name: Checkout repository
@@ -120,7 +132,7 @@ jobs:
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.detect-changes.outputs.any_changed == 'true'
+      needs.detect-changes.outputs.has_changes == 'true'
 
     steps:
       - name: SSH into EC2 & Restart Containers
