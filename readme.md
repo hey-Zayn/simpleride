@@ -62,11 +62,13 @@ This backend uses a **microservices architecture** with four independent service
 ## Services
 
 ### 1. API Gateway (`gateway`)
+
 **Port:** 5000 (internal) | **Nginx:** 8000 (public)
 
 The single entry point for all client requests. Routes HTTP traffic to the correct microservice and proxies WebSocket upgrade connections to both `notification-service` and `location-service`.
 
 **Responsibilities:**
+
 - HTTP reverse proxy for all 4 services
 - WebSocket proxy for Socket.IO connections
 - CORS handling for the frontend (origin: `http://localhost:3000`)
@@ -74,11 +76,13 @@ The single entry point for all client requests. Routes HTTP traffic to the corre
 ---
 
 ### 2. Auth Service (`auth-service`)
+
 **Port:** 4001 (internal) | 3001 (Docker host)
 
 Handles user registration, login, and JWT token generation/validation. Uses MongoDB for user persistence.
 
 **Responsibilities:**
+
 - Register users (RIDER / DRIVER roles)
 - Login and issue JWT access + refresh tokens
 - Token verification middleware shared across services
@@ -86,11 +90,13 @@ Handles user registration, login, and JWT token generation/validation. Uses Mong
 ---
 
 ### 3. Location Service (`location-service`)
+
 **Port:** 4002 (HTTP/WS) | 50051 (gRPC)
 
 Manages driver live location using Redis geospatial commands. Runs a Socket.IO server for real-time GPS streaming and a gRPC server for nearby driver lookups.
 
 **Responsibilities:**
+
 - Store/update driver GPS coordinates in Redis `GEOSEARCH` index
 - Serve `GetNearbyDrivers` via gRPC to the ride-service
 - Stream live driver location to riders over WebSocket
@@ -99,11 +105,13 @@ Manages driver live location using Redis geospatial commands. Runs a Socket.IO s
 ---
 
 ### 4. Notification Service (`notification-service`)
+
 **Port:** 4003
 
 Consumes RabbitMQ ride lifecycle events and pushes real-time notifications to connected clients via Socket.IO. Also persists notifications to a PostgreSQL database and sends Gmail email receipts on ride completion.
 
 **Responsibilities:**
+
 - Socket.IO server for ride event push notifications
 - Consume all `ride.*` RabbitMQ events
 - Log notifications to database
@@ -112,11 +120,13 @@ Consumes RabbitMQ ride lifecycle events and pushes real-time notifications to co
 ---
 
 ### 5. Ride Service (`ride-service`)
+
 **Port:** 4004 (internal) | 3004 (Docker host)
 
 Core business logic for the entire ride lifecycle — from fare estimation to OTP-verified trip start to completion. Implements a bidding system with race-condition protection.
 
 **Responsibilities:**
+
 - Fare estimation for BIKE, MINI, COMFORT vehicle types
 - Create ride requests with custom rider bids
 - Driver bid acceptance (atomic, race-condition safe)
@@ -130,29 +140,29 @@ Core business logic for the entire ride lifecycle — from fare estimation to OT
 
 ## Technology Stack
 
-| Technology    | Role                                              |
-|---------------|---------------------------------------------------|
-| Node.js + ESM | Runtime for all services                          |
-| Express.js    | HTTP server framework                             |
-| Socket.IO     | Real-time WebSocket communication                 |
-| RabbitMQ      | Async event bus (topic exchange `ride_events`)    |
-| Redis         | Geospatial driver index + BullMQ queue backend    |
-| BullMQ        | Delayed job queue for ride expiration             |
-| gRPC          | High-performance RPC between ride and location    |
-| Prisma ORM    | Database access for ride, auth, notification      |
-| PostgreSQL    | Ride, notification, and auth data persistence     |
-| MongoDB       | Auth user storage                                 |
-| Nodemailer    | Gmail SMTP email receipts                         |
-| Docker        | Container runtime for all services                |
-| Nginx         | Reverse proxy public entry point                  |
-| JWT           | Authentication tokens                             |
+| Technology    | Role                                           |
+| ------------- | ---------------------------------------------- |
+| Node.js + ESM | Runtime for all services                       |
+| Express.js    | HTTP server framework                          |
+| Socket.IO     | Real-time WebSocket communication              |
+| RabbitMQ      | Async event bus (topic exchange `ride_events`) |
+| Redis         | Geospatial driver index + BullMQ queue backend |
+| BullMQ        | Delayed job queue for ride expiration          |
+| gRPC          | High-performance RPC between ride and location |
+| Prisma ORM    | Database access for ride, auth, notification   |
+| PostgreSQL    | Ride, notification, and auth data persistence  |
+| MongoDB       | Auth user storage                              |
+| Nodemailer    | Gmail SMTP email receipts                      |
+| Docker        | Container runtime for all services             |
+| Nginx         | Reverse proxy public entry point               |
+| JWT           | Authentication tokens                          |
 
 ---
 
 ## Port Reference
 
 | Service              | Internal | Host  | Protocol       |
-|----------------------|----------|-------|----------------|
+| -------------------- | -------- | ----- | -------------- |
 | Nginx (public)       | 80       | 8000  | HTTP           |
 | Gateway              | 5000     | 5000  | HTTP + WS      |
 | auth-service         | 4001     | 3001  | HTTP           |
@@ -169,35 +179,36 @@ Core business logic for the entire ride lifecycle — from fare estimation to OT
 ## API Endpoints
 
 All routes below are accessed through the **Gateway** at `http://localhost:5000`.
+
 > Append the prefix before each route path. E.g., `POST /auth/api/auth/register`
 
 ### 🔐 Auth Service — Prefix: `/auth`
 
-| Method | Path                      | Auth | Description                          | Request Body / Params |
-|--------|---------------------------|------|--------------------------------------|-----------------------|
-| POST   | `/api/auth/register`      | ❌   | Register a new rider or driver       | `{ name, email, password, role }` |
-| POST   | `/api/auth/login`         | ❌   | Login and receive JWT tokens         | `{ email, password }` |
-| POST   | `/api/auth/refresh`       | ❌   | Refresh access token                 | `{ refreshToken }` |
-| GET    | `/api/auth/profile`       | ✅   | Get current user profile             | — |
-| POST   | `/api/auth/logout`        | ✅   | Invalidate tokens                    | — |
+| Method | Path                 | Auth | Description                    | Request Body / Params             |
+| ------ | -------------------- | ---- | ------------------------------ | --------------------------------- |
+| POST   | `/api/auth/register` | ❌   | Register a new rider or driver | `{ name, email, password, role }` |
+| POST   | `/api/auth/login`    | ❌   | Login and receive JWT tokens   | `{ email, password }`             |
+| POST   | `/api/auth/refresh`  | ❌   | Refresh access token           | `{ refreshToken }`                |
+| GET    | `/api/auth/profile`  | ✅   | Get current user profile       | —                                 |
+| POST   | `/api/auth/logout`   | ✅   | Invalidate tokens              | —                                 |
 
 ---
 
 ### 📍 Location Service — Prefix: `/location`
 
-| Method | Path                         | Auth | Description                                | Request Body |
-|--------|------------------------------|------|--------------------------------------------|--------------|
-| POST   | `/api/location/update`       | ✅   | Update driver GPS coordinates in Redis     | `{ lat, lng }` |
-| POST   | `/api/location/offline`      | ✅   | Remove driver from Redis geo-index         | — |
-| GET    | `/api/location/nearby`       | ✅   | Find drivers near a coordinate (REST)      | `?lat=&lng=&radius=` |
+| Method | Path                    | Auth | Description                            | Request Body         |
+| ------ | ----------------------- | ---- | -------------------------------------- | -------------------- |
+| POST   | `/api/location/update`  | ✅   | Update driver GPS coordinates in Redis | `{ lat, lng }`       |
+| POST   | `/api/location/offline` | ✅   | Remove driver from Redis geo-index     | —                    |
+| GET    | `/api/location/nearby`  | ✅   | Find drivers near a coordinate (REST)  | `?lat=&lng=&radius=` |
 
 ---
 
 ### 🔔 Notification Service — Prefix: `/notification`
 
-| Method | Path                                  | Auth | Description                         | Response |
-|--------|---------------------------------------|------|-------------------------------------|----------|
-| GET    | `/api/notifications/user/:userId`     | ❌   | Get all notifications for a user    | `{ success, data: [...notifications] }` |
+| Method | Path                              | Auth | Description                      | Response                                |
+| ------ | --------------------------------- | ---- | -------------------------------- | --------------------------------------- |
+| GET    | `/api/notifications/user/:userId` | ❌   | Get all notifications for a user | `{ success, data: [...notifications] }` |
 
 ---
 
@@ -207,11 +218,12 @@ All ride endpoints require JWT auth (`Authorization: Bearer <token>`).
 
 #### Fare Estimation
 
-| Method | Path                  | Auth | Description                           | Request Body |
-|--------|-----------------------|------|---------------------------------------|--------------|
+| Method | Path                  | Auth | Description                           | Request Body                                      |
+| ------ | --------------------- | ---- | ------------------------------------- | ------------------------------------------------- |
 | POST   | `/api/rides/estimate` | ✅   | Estimate fare for BIKE, MINI, COMFORT | `{ pickup: { lat, lng }, dropoff: { lat, lng } }` |
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -231,11 +243,12 @@ All ride endpoints require JWT auth (`Authorization: Bearer <token>`).
 
 #### Create Ride Request
 
-| Method | Path               | Auth | Description                                     |
-|--------|--------------------|------|-------------------------------------------------|
-| POST   | `/api/rides/request` | ✅ | Create a ride with rider''s custom bid (in PKR) |
+| Method | Path                 | Auth | Description                                     |
+| ------ | -------------------- | ---- | ----------------------------------------------- |
+| POST   | `/api/rides/request` | ✅   | Create a ride with rider''s custom bid (in PKR) |
 
 **Request Body:**
+
 ```json
 {
   "pickupLat": 31.5204,
@@ -252,6 +265,7 @@ All ride endpoints require JWT auth (`Authorization: Bearer <token>`).
 **Bid Validation:** Rider''s `offeredFare` must be within -5% to +15% of the system-calculated fare.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -271,22 +285,23 @@ All ride endpoints require JWT auth (`Authorization: Bearer <token>`).
 
 #### Ride History
 
-| Method | Path                   | Auth | Description                |
-|--------|------------------------|------|----------------------------|
-| GET    | `/api/rides/history/me` | ✅  | Get current user ride history |
-| GET    | `/api/rides/:id`        | ✅  | Get single ride details    |
+| Method | Path                    | Auth | Description                   |
+| ------ | ----------------------- | ---- | ----------------------------- |
+| GET    | `/api/rides/history/me` | ✅   | Get current user ride history |
+| GET    | `/api/rides/:id`        | ✅   | Get single ride details       |
 
 ---
 
 #### Driver Bidding
 
-| Method | Path                               | Auth | Description                            | Body |
-|--------|------------------------------------|------|----------------------------------------|------|
-| PATCH  | `/api/rides/:id/accept`            | ✅   | Driver accepts rider''s offered fare   | — |
-| POST   | `/api/rides/:id/counter`           | ✅   | Driver sends a counter offer           | `{ counterFare: 230 }` |
-| PATCH  | `/api/rides/:id/counter/:bidId/accept` | ✅ | Rider accepts a driver counter offer | — |
+| Method | Path                                   | Auth | Description                          | Body                   |
+| ------ | -------------------------------------- | ---- | ------------------------------------ | ---------------------- |
+| PATCH  | `/api/rides/:id/accept`                | ✅   | Driver accepts rider''s offered fare | —                      |
+| POST   | `/api/rides/:id/counter`               | ✅   | Driver sends a counter offer         | `{ counterFare: 230 }` |
+| PATCH  | `/api/rides/:id/counter/:bidId/accept` | ✅   | Rider accepts a driver counter offer | —                      |
 
 **Counter bid response:**
+
 ```json
 {
   "success": true,
@@ -305,11 +320,12 @@ All ride endpoints require JWT auth (`Authorization: Bearer <token>`).
 
 #### Trip Status Updates
 
-| Method | Path                   | Auth | Description                                                          |
-|--------|------------------------|------|----------------------------------------------------------------------|
-| PATCH  | `/api/rides/:id/status` | ✅  | Update trip status. OTP required for `IN_PROGRESS` transition only.  |
+| Method | Path                    | Auth | Description                                                         |
+| ------ | ----------------------- | ---- | ------------------------------------------------------------------- |
+| PATCH  | `/api/rides/:id/status` | ✅   | Update trip status. OTP required for `IN_PROGRESS` transition only. |
 
 **Request Body:**
+
 ```json
 {
   "status": "IN_PROGRESS",
@@ -335,15 +351,15 @@ EXPIRED (automatic after 2 minutes if no driver accepts)
 
 No JWT required. Connect and emit `join` with your `userId` immediately.
 
-| Event (send)          | Payload                       | Effect                              |
-|-----------------------|-------------------------------|-------------------------------------|
-| `join`                | `{ userId }`                  | Join your private notification room |
-| `join_driver_pool`    | `{ vehicleType }`             | Join driver pool for `BIKE/MINI/COMFORT` |
+| Event (send)       | Payload           | Effect                                   |
+| ------------------ | ----------------- | ---------------------------------------- |
+| `join`             | `{ userId }`      | Join your private notification room      |
+| `join_driver_pool` | `{ vehicleType }` | Join driver pool for `BIKE/MINI/COMFORT` |
 
-| Event (receive)       | Payload                       | Trigger                              |
-|-----------------------|-------------------------------|--------------------------------------|
-| `ride:expired`        | `{ rideId, message, status }` | No driver accepted in 2 minutes      |
-| `ride:removed`        | `{ rideId, reason }`          | Ride cleaned up from driver pool     |
+| Event (receive) | Payload                       | Trigger                          |
+| --------------- | ----------------------------- | -------------------------------- |
+| `ride:expired`  | `{ rideId, message, status }` | No driver accepted in 2 minutes  |
+| `ride:removed`  | `{ rideId, reason }`          | Ride cleaned up from driver pool |
 
 ---
 
@@ -351,16 +367,16 @@ No JWT required. Connect and emit `join` with your `userId` immediately.
 
 JWT required in `auth.token` or `Authorization` header.
 
-| Event (send)             | Payload                    | Effect                              |
-|--------------------------|----------------------------|-------------------------------------|
-| `join_ride_room`         | `{ rideId }`               | Start receiving live GPS updates    |
-| `update_location`        | `{ lat, lng, rideId? }`    | Broadcast your GPS to ride room     |
+| Event (send)      | Payload                 | Effect                           |
+| ----------------- | ----------------------- | -------------------------------- |
+| `join_ride_room`  | `{ rideId }`            | Start receiving live GPS updates |
+| `update_location` | `{ lat, lng, rideId? }` | Broadcast your GPS to ride room  |
 
-| Event (receive)          | Payload                                    | Trigger                     |
-|--------------------------|--------------------------------------------|-----------------------------|
-| `room_joined`            | `{ success, room }`                        | After join_ride_room        |
-| `driver_location_updated`| `{ driverId, lat, lng, timestamp }`        | Driver emits update_location|
-| `ride_ended`             | `{ rideId, status, message }`              | Ride completed or cancelled |
+| Event (receive)           | Payload                             | Trigger                      |
+| ------------------------- | ----------------------------------- | ---------------------------- |
+| `room_joined`             | `{ success, room }`                 | After join_ride_room         |
+| `driver_location_updated` | `{ driverId, lat, lng, timestamp }` | Driver emits update_location |
+| `ride_ended`              | `{ rideId, status, message }`       | Ride completed or cancelled  |
 
 ---
 
@@ -446,6 +462,7 @@ JWT required in `auth.token` or `Authorization` header.
 ## Running the Project
 
 ### Prerequisites
+
 - Docker Desktop
 - Docker Compose v2+
 
@@ -481,32 +498,34 @@ Each service has its own `.env` file. Key variables:
 
 ### All services
 
-| Variable        | Description                        |
-|-----------------|------------------------------------|
-| `PORT`          | HTTP server port                   |
-| `JWT_SECRET`    | JWT signing secret (shared key)    |
-| `RABBITMQ_URL`  | `amqp://rabbitmq:5672`             |
-| `REDIS_URI`     | `redis://redis:6379`               |
+| Variable       | Description                     |
+| -------------- | ------------------------------- |
+| `PORT`         | HTTP server port                |
+| `JWT_SECRET`   | JWT signing secret (shared key) |
+| `RABBITMQ_URL` | `amqp://rabbitmq:5672`          |
+| `REDIS_URI`    | `redis://redis:6379`            |
 
 ### Ride Service (extra)
 
-| Variable                    | Description                          |
-|-----------------------------|--------------------------------------|
-| `DATABASE_URL`              | PostgreSQL connection string         |
-| `REDIS_HOST` / `REDIS_PORT` | For BullMQ queue connection          |
-| `LOCATION_SERVICE_GRPC_URL` | `location-service:50051`             |
+| Variable                    | Description                  |
+| --------------------------- | ---------------------------- |
+| `DATABASE_URL`              | PostgreSQL connection string |
+| `REDIS_HOST` / `REDIS_PORT` | For BullMQ queue connection  |
+| `LOCATION_SERVICE_GRPC_URL` | `location-service:50051`     |
 
 ### Notification Service (extra)
 
-| Variable      | Description                             |
-|---------------|-----------------------------------------|
-| `DATABASE_URL`| PostgreSQL connection string            |
-| `EMAIL_USER`  | Gmail address for sending receipts      |
-| `EMAIL_PASS`  | Gmail App Password (not regular pass)   |
+| Variable       | Description                           |
+| -------------- | ------------------------------------- |
+| `DATABASE_URL` | PostgreSQL connection string          |
+| `EMAIL_USER`   | Gmail address for sending receipts    |
+| `EMAIL_PASS`   | Gmail App Password (not regular pass) |
 
 ### Location Service (extra)
 
-| Variable        | Description                        |
-|-----------------|------------------------------------|
-| `DATABASE_URL`  | PostgreSQL connection string       |
-| `GRPC_PORT`     | gRPC server port (default: 50051)  |
+| Variable       | Description                       |
+| -------------- | --------------------------------- |
+| `DATABASE_URL` | PostgreSQL connection string      |
+| `GRPC_PORT`    | gRPC server port (default: 50051) |
+
+DEVELOPED BY HEY-ZAYN
