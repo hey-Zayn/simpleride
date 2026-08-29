@@ -19,6 +19,21 @@ services:
     depends_on:
       - gateway
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   gateway:
     image: heyzayn/simpleride-gateway:latest
     container_name: gateway
@@ -41,6 +56,9 @@ services:
       - "3001:4001"
     env_file:
       - .env.auth
+    depends_on:
+      redis:
+        condition: service_healthy
 
   location-service:
     image: heyzayn/simpleride-location:latest
@@ -51,6 +69,9 @@ services:
       - "50051:50051"
     env_file:
       - .env.location
+    depends_on:
+      redis:
+        condition: service_healthy
 
   notification-service:
     image: heyzayn/simpleride-notification:latest
@@ -60,6 +81,9 @@ services:
       - "3003:4003"
     env_file:
       - .env.notification
+    depends_on:
+      redis:
+        condition: service_healthy
 
   ride-service:
     image: heyzayn/simpleride-ride:latest
@@ -69,3 +93,9 @@ services:
       - "3004:4004"
     env_file:
       - .env.ride
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
