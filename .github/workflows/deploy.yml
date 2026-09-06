@@ -11,9 +11,9 @@
 #   - Every push to the "main" branch
 #
 # REQUIRED GITHUB SECRETS:
-#   DOCKERHUB_USERNAME  — Your Docker Hub username (heyzayn)
+#   DOCKERHUB_USERNAME  — Your Docker Hub username (e.g., your_dockerhub_username)
 #   DOCKERHUB_TOKEN     — Docker Hub Access Token
-#   EC2_HOST            — Public/Elastic IP of EC2 (35.154.165.80)
+#   EC2_HOST            — Public/Elastic IP of EC2 (e.g., your_ec2_elastic_ip)
 #   EC2_USERNAME        — SSH user (ubuntu)
 #   EC2_SSH_KEY         — RSA Private Key (.pem content)
 #   EC2_APP_PATH        — Directory on EC2 (/home/ubuntu/app)

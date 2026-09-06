@@ -99,7 +99,7 @@ export default function RiderHeader({
                 {userName}
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-black/5 my-1" />
-              
+
               <DropdownMenuItem asChild className="text-xs font-medium cursor-pointer rounded-sm px-2 py-1.5 hover:bg-[#C1F11D] focus:bg-[#C1F11D] transition-colors gap-2">
                 <Link href="/rider/profile">
                   <User className="w-3.5 h-3.5 opacity-70" />
