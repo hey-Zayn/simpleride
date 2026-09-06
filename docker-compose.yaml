@@ -1,3 +1,5 @@
+name: uber
+
 services:
   nginx:
     image: nginx
